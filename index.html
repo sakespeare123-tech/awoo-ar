@@ -1,516 +1,983 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="theme-color" content="#06122c">
-  <title>aWoo 萬聖小鎮</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#071a3d">
+<title>aWoo 萬聖小鎮</title>
 
-  <!-- 只借用 A-Frame 內建的 THREE，不使用 a-scene / look-controls -->
-  <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
+<style>
+:root{
+  --navy:#071a3d;
+  --navy2:#0b2d67;
+  --yellow:#ffd447;
+  --orange:#ff9e20;
+  --purple:#6c43c5;
+  --white:#fffdf8;
+  --panel:rgba(5,12,32,.86);
+}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#02050d;font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+body{touch-action:none;overscroll-behavior:none;color:white}
+button{font:inherit}
+.hidden{display:none!important}
 
-  <style>
-    *{box-sizing:border-box}
-    html,body{
-      width:100%;height:100%;margin:0;overflow:hidden;
-      background:#030712;
-      font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif;
-      overscroll-behavior:none;
-      touch-action:none;
-    }
+/* ---------- 360 Viewer ---------- */
+#panoCanvas{
+  position:fixed;inset:0;width:100%;height:100%;display:block;background:#030714;z-index:1;
+  touch-action:none;
+}
+#darkFade{
+  position:fixed;inset:0;z-index:4;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.12),transparent 23%,transparent 68%,rgba(0,0,0,.26));
+}
 
-    #viewer{
-      position:fixed;inset:0;
-      width:100%;height:100%;
-      z-index:1;
-      display:block;
-      touch-action:none;
-    }
+/* ---------- Intro ---------- */
+#intro{
+  position:fixed;inset:0;z-index:5000;
+  display:grid;place-items:center;
+  background:
+    radial-gradient(circle at 50% 40%,rgba(61,85,169,.35),transparent 35%),
+    linear-gradient(180deg,#081d43 0%,#030814 100%);
+  overflow:hidden;
+}
+#intro::before{
+  content:"";position:absolute;inset:0;opacity:.22;
+  background-image:
+    radial-gradient(circle at 12% 22%,#fff 0 1px,transparent 2px),
+    radial-gradient(circle at 68% 14%,#fff 0 1px,transparent 2px),
+    radial-gradient(circle at 82% 48%,#fff 0 1px,transparent 2px),
+    radial-gradient(circle at 35% 72%,#fff 0 1px,transparent 2px);
+  background-size:180px 160px,230px 210px,190px 240px,260px 190px;
+}
+.introMascot{
+  position:relative;width:min(62vw,360px);aspect-ratio:1/1.08;
+  display:grid;place-items:end center;z-index:2;
+  animation:introDog 1.4s ease-in-out .15s both;
+}
+.introMascot img{
+  max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 25px 30px rgba(0,0,0,.34));
+}
+@keyframes introDog{
+  0%{transform:translateY(20px) scale(.92);opacity:0}
+  18%{opacity:1;transform:translateY(0) scale(1)}
+  30%{transform:rotate(-2.5deg)}
+  43%{transform:rotate(2.5deg)}
+  56%{transform:rotate(-2.5deg)}
+  69%{transform:rotate(2.5deg)}
+  82%{transform:rotate(0)}
+  100%{transform:translateY(-4px)}
+}
+.introSpark{
+  position:absolute;color:var(--yellow);font-size:28px;animation:spark 1.2s ease-in-out infinite alternate;
+}
+.introSpark.s1{left:8%;top:22%}.introSpark.s2{right:8%;top:36%;animation-delay:.3s}.introSpark.s3{right:22%;bottom:14%;animation-delay:.6s}
+@keyframes spark{from{transform:scale(.7) rotate(-8deg);opacity:.3}to{transform:scale(1.15) rotate(8deg);opacity:1}}
+#introText{
+  position:absolute;bottom:max(36px,env(safe-area-inset-bottom));left:0;right:0;text-align:center;
+  font-weight:800;letter-spacing:.8px;color:rgba(255,255,255,.82);font-size:14px;
+  opacity:0;animation:introText .35s ease 1.05s forwards;
+}
+@keyframes introText{to{opacity:1}}
+/* ---------- Welcome ---------- */
+#welcome{
+  position:fixed;inset:0;z-index:4500;
+  display:none;place-items:center;padding:22px;
+  background:linear-gradient(180deg,rgba(4,12,31,.90),rgba(2,6,17,.94));
+}
+.welcomeCard{
+  width:min(100%,430px);
+  padding:26px 22px 22px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:28px;
+  background:rgba(8,18,44,.92);
+  box-shadow:0 28px 80px rgba(0,0,0,.42);
+  text-align:center;
+  backdrop-filter:blur(16px);
+}
+.welcomeIcon{font-size:46px}
+.welcomeCard h1{font-size:29px;margin:8px 0 4px;color:var(--yellow)}
+.welcomeCard .sub{margin:0 0 15px;color:#fff;opacity:.72;font-size:13px}
+.welcomeCard p{line-height:1.7;font-size:14px;margin:0 0 18px;color:rgba(255,255,255,.88)}
+.primary{
+  width:100%;min-height:54px;border:0;border-radius:17px;
+  background:linear-gradient(135deg,var(--yellow),#ffad2e);
+  color:#10214a;font-weight:900;font-size:17px;cursor:pointer;
+}
+.smallNote{font-size:11px!important;opacity:.55!important;margin:11px 0 0!important}
 
-    #ui{
-      position:fixed;inset:0;
-      z-index:100;
-      pointer-events:none;
-    }
+/* ---------- Main UI ---------- */
+#hud{position:fixed;inset:0;z-index:100;pointer-events:none}
+.topbar{
+  position:absolute;left:12px;right:12px;top:max(10px,env(safe-area-inset-top));
+  display:flex;align-items:flex-start;justify-content:space-between;gap:8px
+}
+.brand,.hudBtn,.progress{
+  background:var(--panel);border:1px solid rgba(255,255,255,.14);box-shadow:0 8px 28px rgba(0,0,0,.25);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+.brand{padding:9px 12px;border-radius:15px}
+.brand b{display:block;color:var(--yellow);font-size:15px}.brand small{font-size:10px;opacity:.66}
+.topActions{display:flex;gap:7px;pointer-events:auto}
+.hudBtn{
+  min-width:43px;height:43px;border-radius:14px;color:white;cursor:pointer;padding:0 10px;
+}
+.progress{
+  position:absolute;top:66px;left:50%;transform:translateX(-50%);
+  border-radius:999px;padding:8px 13px;font-size:12px;white-space:nowrap
+}
+#sceneLabel{
+  position:absolute;left:50%;top:105px;transform:translateX(-50%);
+  background:rgba(5,12,32,.70);padding:7px 12px;border-radius:999px;
+  font-size:12px;white-space:nowrap
+}
+#hint{
+  position:absolute;left:50%;bottom:104px;transform:translateX(-50%);
+  max-width:90%;padding:8px 13px;border-radius:999px;background:rgba(5,12,32,.74);
+  text-align:center;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sceneNav{
+  position:absolute;left:0;right:0;bottom:max(14px,env(safe-area-inset-bottom));
+  display:flex;gap:8px;overflow-x:auto;padding:0 12px 4px;pointer-events:auto;scrollbar-width:none;
+}
+.sceneNav::-webkit-scrollbar{display:none}
+.sceneChip{
+  flex:0 0 auto;height:48px;border:1px solid rgba(255,255,255,.14);border-radius:15px;
+  background:rgba(5,12,32,.86);color:white;padding:0 14px;font-weight:750;cursor:pointer;
+}
+.sceneChip.active{background:var(--yellow);border-color:var(--yellow);color:#10214a}
 
-    .top{
-      position:absolute;
-      top:max(14px,env(safe-area-inset-top));
-      left:14px;right:14px;
-      display:flex;justify-content:space-between;align-items:center;gap:10px;
-    }
+/* ---------- Ghost hotspot ---------- */
+.ghostHotspot{
+  position:fixed;z-index:80;width:94px;height:94px;transform:translate(-50%,-50%);
+  border:0;background:transparent;padding:0;cursor:pointer;display:none;
+  filter:drop-shadow(0 8px 15px rgba(0,0,0,.38));pointer-events:auto;
+  animation:ghostFloat 1.7s ease-in-out infinite alternate;
+}
+.ghostHotspot img{width:100%;height:100%;object-fit:contain}
+.ghostHotspot::after{
+  content:"";position:absolute;inset:-7px;border:2px dashed rgba(255,212,71,.8);border-radius:50%;
+  animation:ring 1.3s linear infinite;
+}
+@keyframes ghostFloat{to{margin-top:-8px}}
+@keyframes ring{to{transform:rotate(360deg)}}
 
-    .brand,.pill,.btn{
-      background:rgba(4,10,28,.86);
-      border:1px solid rgba(255,255,255,.16);
-      color:white;
-      box-shadow:0 10px 28px rgba(0,0,0,.28);
-      backdrop-filter:blur(10px);
-      -webkit-backdrop-filter:blur(10px);
-    }
+/* ---------- Modal ---------- */
+.modal{
+  position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;padding:20px;
+  background:rgba(0,0,0,.58);backdrop-filter:blur(8px);pointer-events:auto
+}
+.modal.show{display:flex}
+.modalCard{
+  width:min(100%,450px);max-height:86vh;overflow:auto;
+  border-radius:24px;background:#0a1838;color:white;border:1px solid rgba(255,255,255,.13);
+  padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.45)
+}
+.modalCard h2{margin:0 0 10px;color:var(--yellow);font-size:21px}
+.modalCard p{line-height:1.6;font-size:13px;opacity:.82}
+.closeBtn{width:100%;height:48px;border:0;border-radius:15px;background:#fff;color:#10214a;font-weight:800;margin-top:13px}
 
-    .brand{padding:10px 14px;border-radius:16px}
-    .brand b{display:block;color:#ffd84d;font-size:16px}
-    .brand small{opacity:.72}
+/* ---------- Guide / Collection ---------- */
+.ghostGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.ghostCard{background:rgba(255,255,255,.06);border-radius:17px;padding:9px;text-align:center;min-height:130px}
+.ghostCard img{width:100%;aspect-ratio:1;object-fit:contain;filter:grayscale(1) brightness(.25);opacity:.4}
+.ghostCard.caught img{filter:none;opacity:1}
+.ghostCard b{font-size:11px;display:block;margin-top:4px}
+.ghostCard span{font-size:10px;opacity:.5}
 
-    .pill{
-      padding:10px 13px;
-      border-radius:999px;
-      font-size:12px;
-    }
+/* ---------- Capture popup ---------- */
+#captureModal .modalCard{text-align:center}
+.captureGhost{width:180px;height:180px;object-fit:contain;margin:0 auto 5px;display:block}
+.captureTitle{font-size:23px;color:var(--yellow);font-weight:900}
+.captureActions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:15px}
+.captureActions button{height:48px;border:0;border-radius:14px;font-weight:800}
+.captureActions .photoNow{background:var(--yellow);color:#10214a}
+.captureActions .continue{background:rgba(255,255,255,.1);color:white}
 
-    #status{
-      position:absolute;
-      left:50%;bottom:94px;
-      transform:translateX(-50%);
-      background:rgba(4,10,28,.82);
-      color:#fff;
-      padding:9px 14px;
-      border-radius:999px;
-      font-size:13px;
-      white-space:nowrap;
-      max-width:90%;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
+/* ---------- Photo mode ---------- */
+#photoPanel{
+  position:fixed;inset:0;z-index:1800;display:none;background:#030713;color:white;touch-action:none
+}
+#photoPanel.show{display:block}
+.photoTop{
+  position:absolute;left:12px;right:12px;top:max(10px,env(safe-area-inset-top));z-index:20;
+  display:flex;justify-content:space-between;gap:8px
+}
+.photoTop button{
+  height:44px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:rgba(5,12,32,.86);
+  color:white;padding:0 13px;font-weight:800
+}
+.photoInstruction{
+  position:absolute;z-index:12;top:68px;left:50%;transform:translateX(-50%);
+  background:rgba(5,12,32,.78);padding:8px 13px;border-radius:999px;font-size:12px;white-space:nowrap
+}
+#photoScenePreview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#petPreviewWrap{
+  position:absolute;z-index:9;left:50%;top:52%;transform:translate(-50%,-50%);
+  width:min(70vw,340px);height:min(54vh,470px);border-radius:28px;overflow:hidden;
+  border:4px solid rgba(255,255,255,.92);box-shadow:0 18px 50px rgba(0,0,0,.45);
+  background:rgba(255,255,255,.08);display:none
+}
+#petPreview{width:100%;height:100%;object-fit:cover}
+.photoMascot{position:absolute;z-index:10;pointer-events:none;filter:drop-shadow(0 10px 14px rgba(0,0,0,.35))}
+#photoDog{width:min(33vw,180px);left:3%;bottom:9%}
+.photoGhost{width:min(22vw,115px)}
+.pg1{left:2%;top:17%}.pg2{right:2%;top:16%}.pg3{left:4%;bottom:28%}.pg4{right:4%;bottom:30%}.pg5{left:30%;top:8%}.pg6{right:29%;bottom:8%}
+.photoBottom{
+  position:absolute;z-index:30;left:12px;right:12px;bottom:max(16px,env(safe-area-inset-bottom));
+  display:grid;grid-template-columns:1fr 1fr;gap:9px
+}
+.photoBottom button{
+  height:52px;border:0;border-radius:15px;font-weight:900;font-size:14px
+}
+#pickPetBtn{background:white;color:#10214a}
+#makeStoryBtn{background:var(--yellow);color:#10214a}
+#petInput{display:none}
 
-    .bottom{
-      position:absolute;
-      left:50%;
-      bottom:max(22px,env(safe-area-inset-bottom));
-      transform:translateX(-50%);
-      width:min(94%,540px);
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-      pointer-events:auto;
-    }
+/* ---------- Result ---------- */
+#resultModal .modalCard{text-align:center}
+#resultCanvas{width:100%;max-height:62vh;object-fit:contain;border-radius:15px;background:#111}
+.resultBtns{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.resultBtns button{height:48px;border:0;border-radius:14px;font-weight:900}
+#saveResult{background:var(--yellow);color:#10214a}#shareResult{background:#fff;color:#10214a}
 
-    .btn{
-      min-height:52px;
-      border-radius:16px;
-      font-size:15px;
-      font-weight:850;
-      cursor:pointer;
-      touch-action:manipulation;
-      -webkit-tap-highlight-color:transparent;
-    }
+/* ---------- Loader / Toast ---------- */
+#loader{
+  position:fixed;inset:0;z-index:6000;display:none;place-items:center;background:#030713;color:white;text-align:center
+}
+#loader.show{display:grid}
+.loaderBox{padding:20px}.spinner{width:40px;height:40px;border:4px solid rgba(255,255,255,.2);border-top-color:var(--yellow);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 13px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#toast{
+  position:fixed;z-index:7000;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);
+  padding:14px 18px;border-radius:17px;background:rgba(5,12,32,.94);border:1px solid rgba(255,255,255,.15);
+  color:white;font-weight:800;opacity:0;pointer-events:none;transition:.2s;max-width:88%;text-align:center
+}
+#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 
-    .btn.active{
-      background:#ffd84d;
-      color:#142149;
-      border-color:#ffd84d;
-    }
-
-    #start{
-      position:fixed;inset:0;
-      z-index:1000;
-      display:grid;
-      place-items:center;
-      padding:24px;
-      background:
-        radial-gradient(circle at 50% 32%,rgba(33,72,151,.52),transparent 42%),
-        linear-gradient(180deg,#07152f,#02050d);
-      color:white;
-    }
-
-    .card{
-      width:min(100%,430px);
-      padding:28px 24px 24px;
-      text-align:center;
-      border-radius:28px;
-      background:rgba(8,15,38,.92);
-      border:1px solid rgba(255,255,255,.14);
-      box-shadow:0 28px 80px rgba(0,0,0,.38);
-    }
-
-    .emoji{font-size:54px;line-height:1}
-    .card h1{margin:12px 0 8px;color:#ffd84d}
-    .card p{font-size:14px;line-height:1.7;opacity:.84;margin:0 0 18px}
-
-    #enter{
-      width:100%;height:54px;border:0;border-radius:17px;
-      background:linear-gradient(135deg,#ffd84d,#ffad31);
-      color:#10204a;font-size:17px;font-weight:900;
-      cursor:pointer;
-    }
-
-    #sensorNote{
-      margin-top:12px;
-      font-size:11px;
-      opacity:.62;
-      line-height:1.5;
-    }
-
-    #error{
-      display:none;
-      position:fixed;
-      z-index:2000;
-      left:16px;right:16px;top:50%;
-      transform:translateY(-50%);
-      padding:18px;
-      border-radius:18px;
-      background:#351017;
-      color:white;
-      line-height:1.6;
-    }
-  </style>
+@media(max-width:420px){
+  .brand small{display:none}.brand b{font-size:14px}
+  .ghostHotspot{width:78px;height:78px}
+  .ghostGrid{gap:7px}
+}
+</style>
 </head>
+
 <body>
 
-<canvas id="viewer"></canvas>
+<canvas id="panoCanvas"></canvas>
+<div id="darkFade"></div>
 
-<div id="ui">
-  <div class="top">
-    <div class="brand">
-      <b>aWoo 萬聖小鎮</b>
-      <small>Always be here</small>
-    </div>
-    <div id="sceneName" class="pill">🏠 入口廣場</div>
+<audio id="bgm" src="awoo-halloween-bgm.mp3" loop preload="none"></audio>
+
+<!-- Intro -->
+<section id="intro">
+  <span class="introSpark s1">✦</span><span class="introSpark s2">✦</span><span class="introSpark s3">✦</span>
+  <div class="introMascot">
+    <img src="awoo-halloween-npc.png" alt="aWoo Halloween NPC">
   </div>
+  <div id="introText">aWoo Halloween Adventure</div>
+</section>
 
-  <div id="status">👆 手指拖曳畫面試試看</div>
-
-  <div class="bottom">
-    <button id="entranceBtn" class="btn active" type="button">🏠 入口廣場</button>
-    <button id="harbourBtn" class="btn" type="button">🎃 南瓜港</button>
-  </div>
-</div>
-
-<div id="start">
-  <div class="card">
-    <div class="emoji">🎃</div>
+<!-- Welcome -->
+<section id="welcome">
+  <div class="welcomeCard">
+    <div class="welcomeIcon">🎃</div>
     <h1>aWoo 萬聖小鎮</h1>
+    <div class="sub">萌鬼軍團出沒中！</div>
     <p>
-      進入後先用手指拖曳測試 360° 畫面。<br>
-      手機若支援方向感應，轉動手機也會跟著移動。
+      轉動手機或拖曳畫面探索 7 個區域，<br>
+      找回藏在小鎮裡的 6 隻萌鬼。<br>
+      集滿後解鎖「萌鬼軍團大合照」！
     </p>
-    <button id="enter" type="button">進入萬聖小鎮</button>
-    <div id="sensorNote">iPhone 若跳出「動作與方向」權限，請選擇允許。</div>
+    <button id="enterTown" class="primary">進入萬聖小鎮</button>
+    <p class="smallNote">iPhone 若詢問「動作與方向」權限，請選擇允許。音樂會在進入後播放。</p>
+  </div>
+</section>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div class="topbar">
+    <div class="brand"><b>aWoo 萬聖小鎮</b><small>Always be here</small></div>
+    <div class="topActions">
+      <button id="albumBtn" class="hudBtn" title="萌鬼圖鑑">👻</button>
+      <button id="photoBtn" class="hudBtn" title="合照">📸</button>
+      <button id="soundBtn" class="hudBtn" title="音樂">🔊</button>
+    </div>
+  </div>
+  <div id="progress" class="progress">萌鬼圖鑑　0 / 6</div>
+  <div id="sceneLabel">📍 入口廣場</div>
+  <div id="hint">👆 拖曳畫面，或轉動手機探索</div>
+  <div id="sceneNav" class="sceneNav"></div>
+</div>
+
+<!-- Single clickable ghost hotspot -->
+<button id="ghostHotspot" class="ghostHotspot" aria-label="找到萌鬼">
+  <img id="hotspotImg" alt="">
+</button>
+
+<!-- Album -->
+<div id="albumModal" class="modal">
+  <div class="modalCard">
+    <h2>👻 萌鬼圖鑑</h2>
+    <p id="albumText">找到散落在小鎮裡的 6 隻萌鬼吧！</p>
+    <div id="ghostGrid" class="ghostGrid"></div>
+    <button class="closeBtn" data-close="albumModal">繼續探索</button>
   </div>
 </div>
 
-<div id="error"></div>
+<!-- Capture -->
+<div id="captureModal" class="modal">
+  <div class="modalCard">
+    <img id="captureGhostImg" class="captureGhost" alt="">
+    <div class="captureTitle">捕捉成功！</div>
+    <p id="captureName"></p>
+    <div class="captureActions">
+      <button id="capturePhotoNow" class="photoNow">📸 跟牠合照</button>
+      <button id="captureContinue" class="continue">繼續尋找</button>
+    </div>
+  </div>
+</div>
+
+<!-- Photo Mode -->
+<section id="photoPanel">
+  <canvas id="photoScenePreview"></canvas>
+  <div class="photoTop">
+    <button id="exitPhoto">← 回小鎮</button>
+    <button id="photoSceneName">📍 目前場景</button>
+  </div>
+  <div class="photoInstruction">先轉到喜歡的場景角度，再加入毛孩照片 ✨</div>
+
+  <div id="petPreviewWrap"><img id="petPreview" alt="pet"></div>
+
+  <img id="photoDog" class="photoMascot" src="awoo-halloween-npc.png" alt="aWoo">
+  <img class="photoMascot photoGhost pg1" data-photo-ghost="0" alt="">
+  <img class="photoMascot photoGhost pg2" data-photo-ghost="1" alt="">
+  <img class="photoMascot photoGhost pg3" data-photo-ghost="2" alt="">
+  <img class="photoMascot photoGhost pg4" data-photo-ghost="3" alt="">
+  <img class="photoMascot photoGhost pg5" data-photo-ghost="4" alt="">
+  <img class="photoMascot photoGhost pg6" data-photo-ghost="5" alt="">
+
+  <div class="photoBottom">
+    <button id="pickPetBtn">🐾 拍／選毛孩照片</button>
+    <button id="makeStoryBtn">✨ 生成限動合照</button>
+  </div>
+  <input id="petInput" type="file" accept="image/*" capture="environment">
+</section>
+
+<!-- Result -->
+<div id="resultModal" class="modal">
+  <div class="modalCard">
+    <h2>✨ 萌鬼合照完成</h2>
+    <canvas id="resultCanvas" width="1080" height="1920"></canvas>
+    <p>尺寸 1080 × 1920，可直接拿來發限時動態。</p>
+    <div class="resultBtns">
+      <button id="saveResult">儲存照片</button>
+      <button id="shareResult">分享</button>
+    </div>
+    <button class="closeBtn" data-close="resultModal">返回</button>
+  </div>
+</div>
+
+<!-- Loader -->
+<div id="loader"><div class="loaderBox"><div class="spinner"></div><div id="loaderText">載入萬聖小鎮中…</div></div></div>
+<div id="toast"></div>
 
 <script>
-(function(){
-  "use strict";
+(() => {
+"use strict";
 
-  const THREE = window.THREE;
+/* =========================================================
+   aWoo Halloween - self contained panorama engine
+   No A-Frame / Three.js / external JS dependency.
+   ========================================================= */
 
-  if (!THREE) {
-    document.getElementById("error").style.display = "block";
-    document.getElementById("error").textContent =
-      "Three.js 沒有載入成功。請確認網頁可以連線到 aframe.io。";
-    return;
+/* ---------- Asset config ---------- */
+const SCENES = [
+  {id:"entrance", name:"入口廣場", icon:"🏠", file:"awoo-halloween-town-01-entrance.png"},
+  {id:"harbour", name:"南瓜港", icon:"🎃", file:"awoo-halloween-town-02-pumpkin-harbour.png"},
+  {id:"witch", name:"魔女雜貨店", icon:"🧙", file:"awoo-halloween-town-03-witch-shop.png"},
+  {id:"graveyard", name:"墓園", icon:"🪦", file:"awoo-halloween-town-04-graveyard.png"},
+  {id:"station", name:"廢棄車站", icon:"🚂", file:"awoo-halloween-town-05-abandoned-station.png"},
+  {id:"candy", name:"糖果屋", icon:"🍭", file:"awoo-halloween-town-06-candy-house.png"},
+  {id:"plaza", name:"萌鬼廣場", icon:"👻", file:"awoo-halloween-town-07-ghost-plaza.png"}
+];
+
+/*
+  每個萌鬼各藏在一個場景。
+  yaw / pitch 是牠在 360° 世界中的角度；之後想換藏點只要改這兩個數字。
+*/
+const GHOSTS = [
+  {id:"pumpkin", name:"南瓜怪", file:"awoo-ghost-01-pumpkin.png", scene:"harbour", yaw:0.75, pitch:-0.03},
+  {id:"batmouse", name:"蝙蝠老鼠", file:"awoo-ghost-02-batmouse.png", scene:"witch", yaw:-0.85, pitch:0.14},
+  {id:"mummy", name:"木乃伊兔", file:"awoo-ghost-03-mummy-bunny.png", scene:"graveyard", yaw:1.35, pitch:-0.08},
+  {id:"cat", name:"魔女黑貓", file:"awoo-ghost-04-witch-cat.png", scene:"station", yaw:-1.45, pitch:0.02},
+  {id:"werewolf", name:"小狼人", file:"awoo-ghost-05-werewolf.png", scene:"candy", yaw:0.18, pitch:0.12},
+  {id:"candyghost", name:"糖果幽靈", file:"awoo-ghost-06-candy-ghost.png", scene:"plaza", yaw:-0.25, pitch:-0.04}
+];
+
+/* ---------- DOM ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+const canvas = $("#panoCanvas");
+const intro = $("#intro");
+const welcome = $("#welcome");
+const enterTown = $("#enterTown");
+const hud = $("#hud");
+const progressEl = $("#progress");
+const sceneLabel = $("#sceneLabel");
+const hint = $("#hint");
+const sceneNav = $("#sceneNav");
+const ghostHotspot = $("#ghostHotspot");
+const hotspotImg = $("#hotspotImg");
+const albumBtn = $("#albumBtn");
+const photoBtn = $("#photoBtn");
+const soundBtn = $("#soundBtn");
+const albumModal = $("#albumModal");
+const ghostGrid = $("#ghostGrid");
+const albumText = $("#albumText");
+const captureModal = $("#captureModal");
+const captureGhostImg = $("#captureGhostImg");
+const captureName = $("#captureName");
+const captureContinue = $("#captureContinue");
+const capturePhotoNow = $("#capturePhotoNow");
+const photoPanel = $("#photoPanel");
+const photoScenePreview = $("#photoScenePreview");
+const exitPhoto = $("#exitPhoto");
+const photoSceneName = $("#photoSceneName");
+const petInput = $("#petInput");
+const petPreview = $("#petPreview");
+const petPreviewWrap = $("#petPreviewWrap");
+const pickPetBtn = $("#pickPetBtn");
+const makeStoryBtn = $("#makeStoryBtn");
+const resultModal = $("#resultModal");
+const resultCanvas = $("#resultCanvas");
+const saveResult = $("#saveResult");
+const shareResult = $("#shareResult");
+const loader = $("#loader");
+const loaderText = $("#loaderText");
+const toast = $("#toast");
+const bgm = $("#bgm");
+
+/* ---------- state ---------- */
+let currentScene = 0;
+let caught = new Set(JSON.parse(localStorage.getItem("awooCaughtGhosts") || "[]"));
+let yaw = 0;
+let pitch = 0;
+let dragging = false;
+let lastX = 0, lastY = 0;
+let sensorEnabled = false;
+let sensorReceived = false;
+let sensorBaseAlpha = null;
+let sensorBaseBeta = null;
+let sensorYaw = 0, sensorPitch = 0;
+let lastCapturedGhost = null;
+let petImage = null;
+let soundOn = true;
+let photoMode = false;
+
+/* ---------- utility ---------- */
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const wrapPi = a => {
+  while(a > Math.PI) a -= Math.PI*2;
+  while(a < -Math.PI) a += Math.PI*2;
+  return a;
+};
+function showToast(msg, ms=1700){
+  toast.textContent = msg;
+  toast.classList.add("show");
+  clearTimeout(showToast.t);
+  showToast.t = setTimeout(()=>toast.classList.remove("show"),ms);
+}
+function openModal(el){ el.classList.add("show"); }
+function closeModal(el){ el.classList.remove("show"); }
+$$("[data-close]").forEach(btn=>{
+  btn.addEventListener("click",()=>closeModal(document.getElementById(btn.dataset.close)));
+});
+
+/* =========================================================
+   WEBGL PANORAMA ENGINE
+   ========================================================= */
+const gl = canvas.getContext("webgl",{
+  alpha:false,
+  antialias:false,
+  preserveDrawingBuffer:true
+});
+
+if(!gl){
+  alert("這個瀏覽器無法使用 WebGL。請用最新版 Safari / Chrome 開啟。");
+  throw new Error("WebGL unavailable");
+}
+
+const vertexSrc = `
+attribute vec2 a_position;
+varying vec2 v_uv;
+void main(){
+  v_uv = a_position * 0.5 + 0.5;
+  gl_Position = vec4(a_position,0.0,1.0);
+}`;
+
+const fragmentSrc = `
+precision highp float;
+varying vec2 v_uv;
+uniform sampler2D u_tex;
+uniform float u_yaw;
+uniform float u_pitch;
+uniform float u_aspect;
+uniform float u_fov;
+
+const float PI = 3.141592653589793;
+
+mat3 rotX(float a){
+  float s=sin(a), c=cos(a);
+  return mat3(1.,0.,0., 0.,c,-s, 0.,s,c);
+}
+mat3 rotY(float a){
+  float s=sin(a), c=cos(a);
+  return mat3(c,0.,s, 0.,1.,0., -s,0.,c);
+}
+
+void main(){
+  vec2 ndc = v_uv * 2.0 - 1.0;
+  float t = tan(u_fov * 0.5);
+  vec3 ray = normalize(vec3(ndc.x * u_aspect * t, ndc.y * t, -1.0));
+  ray = rotY(u_yaw) * rotX(u_pitch) * ray;
+
+  float lon = atan(ray.x, -ray.z);
+  float lat = asin(clamp(ray.y,-1.0,1.0));
+
+  float u = fract(lon / (2.0*PI) + 0.5);
+  float v = 0.5 - lat / PI;
+
+  gl_FragColor = texture2D(u_tex, vec2(u,v));
+}`;
+
+function compile(type,src){
+  const s = gl.createShader(type);
+  gl.shaderSource(s,src);
+  gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){
+    throw new Error(gl.getShaderInfoLog(s));
   }
+  return s;
+}
+const program = gl.createProgram();
+gl.attachShader(program,compile(gl.VERTEX_SHADER,vertexSrc));
+gl.attachShader(program,compile(gl.FRAGMENT_SHADER,fragmentSrc));
+gl.linkProgram(program);
+if(!gl.getProgramParameter(program,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
+gl.useProgram(program);
 
-  const canvas = document.getElementById("viewer");
-  const statusEl = document.getElementById("status");
-  const sceneName = document.getElementById("sceneName");
-  const entranceBtn = document.getElementById("entranceBtn");
-  const harbourBtn = document.getElementById("harbourBtn");
-  const enterBtn = document.getElementById("enter");
-  const start = document.getElementById("start");
-  const errorBox = document.getElementById("error");
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]),gl.STATIC_DRAW);
+const aPos = gl.getAttribLocation(program,"a_position");
+gl.enableVertexAttribArray(aPos);
+gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
 
-  const FILES = {
-    entrance: "awoo-halloween-town-01-entrance.png",
-    harbour: "awoo-halloween-town-02-pumpkin-harbour.png"
+const U = {
+  tex:gl.getUniformLocation(program,"u_tex"),
+  yaw:gl.getUniformLocation(program,"u_yaw"),
+  pitch:gl.getUniformLocation(program,"u_pitch"),
+  aspect:gl.getUniformLocation(program,"u_aspect"),
+  fov:gl.getUniformLocation(program,"u_fov")
+};
+gl.uniform1i(U.tex,0);
+
+const textures = [];
+const images = [];
+
+function createTexture(img){
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D,tex);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
+  return tex;
+}
+
+function loadImage(src){
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=()=>reject(new Error("找不到："+src));
+    img.src=src+"?v=20260817";
+  });
+}
+
+async function preloadScenes(){
+  loader.classList.add("show");
+  try{
+    for(let i=0;i<SCENES.length;i++){
+      loaderText.textContent=`載入小鎮場景 ${i+1} / ${SCENES.length}…`;
+      const img=await loadImage(SCENES[i].file);
+      images[i]=img;
+      textures[i]=createTexture(img);
+    }
+  }catch(e){
+    alert(e.message+"\n\n請確認檔名與 index.html 放在 GitHub 同一層。");
+    throw e;
+  }finally{
+    loader.classList.remove("show");
+  }
+}
+
+function resize(){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  const w=Math.round(innerWidth*dpr), h=Math.round(innerHeight*dpr);
+  if(canvas.width!==w || canvas.height!==h){canvas.width=w;canvas.height=h}
+  gl.viewport(0,0,w,h);
+  photoScenePreview.width=w;
+  photoScenePreview.height=h;
+}
+addEventListener("resize",resize);
+addEventListener("orientationchange",()=>setTimeout(resize,200));
+
+function effectiveYaw(){return yaw+(sensorEnabled?sensorYaw:0)}
+function effectivePitch(){return clamp(pitch+(sensorEnabled?sensorPitch:0),-1.42,1.42)}
+
+function renderPano(targetCanvas=null){
+  const viewYaw=effectiveYaw(), viewPitch=effectivePitch();
+  gl.useProgram(program);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D,textures[currentScene]);
+  gl.uniform1f(U.yaw,viewYaw);
+  gl.uniform1f(U.pitch,viewPitch);
+  gl.uniform1f(U.aspect,canvas.width/canvas.height);
+  gl.uniform1f(U.fov,75*Math.PI/180);
+  gl.drawArrays(gl.TRIANGLES,0,6);
+
+  if(photoMode){
+    const ctx=photoScenePreview.getContext("2d");
+    ctx.clearRect(0,0,photoScenePreview.width,photoScenePreview.height);
+    ctx.drawImage(canvas,0,0,photoScenePreview.width,photoScenePreview.height);
+  }
+}
+
+/* ---------- Controls ---------- */
+function down(e){
+  if(e.target.closest && (e.target.closest("button") || e.target.closest(".modal"))) return;
+  dragging=true;lastX=e.clientX;lastY=e.clientY;
+  try{canvas.setPointerCapture(e.pointerId)}catch(_){}
+}
+function move(e){
+  if(!dragging)return;
+  const dx=e.clientX-lastX,dy=e.clientY-lastY;
+  lastX=e.clientX;lastY=e.clientY;
+  yaw=wrapPi(yaw-dx*.0042);
+  pitch=clamp(pitch+dy*.0042,-1.35,1.35);
+}
+function up(e){dragging=false;try{canvas.releasePointerCapture(e.pointerId)}catch(_){}}
+canvas.addEventListener("pointerdown",down);
+canvas.addEventListener("pointermove",move);
+canvas.addEventListener("pointerup",up);
+canvas.addEventListener("pointercancel",up);
+
+/* Photo preview gets same drag controls */
+photoScenePreview.addEventListener("pointerdown",e=>{dragging=true;lastX=e.clientX;lastY=e.clientY});
+photoScenePreview.addEventListener("pointermove",move);
+photoScenePreview.addEventListener("pointerup",()=>dragging=false);
+photoScenePreview.addEventListener("pointercancel",()=>dragging=false);
+
+/* ---------- Device orientation ---------- */
+async function enableSensor(){
+  try{
+    if(typeof DeviceOrientationEvent!=="undefined" && typeof DeviceOrientationEvent.requestPermission==="function"){
+      const r=await DeviceOrientationEvent.requestPermission();
+      if(r!=="granted"){showToast("方向感應未允許，仍可用手指拖曳");return}
+    }
+    if("DeviceOrientationEvent" in window){
+      sensorEnabled=true;
+      addEventListener("deviceorientation",onOrientation,true);
+    }
+  }catch(e){showToast("方向感應不可用，仍可手指拖曳")}
+}
+function onOrientation(e){
+  if(e.alpha==null||e.beta==null)return;
+  const a=e.alpha*Math.PI/180,b=e.beta*Math.PI/180;
+  if(sensorBaseAlpha==null){sensorBaseAlpha=a;sensorBaseBeta=b}
+  sensorYaw=-wrapPi(a-sensorBaseAlpha);
+  sensorPitch=clamp(-(b-sensorBaseBeta),-1.1,1.1);
+  if(!sensorReceived){sensorReceived=true;showToast("✅ 手機方向感應已啟用")}
+}
+
+/* ---------- hotspots ---------- */
+function currentGhost(){
+  return GHOSTS.find(g=>g.scene===SCENES[currentScene].id) || null;
+}
+function updateHotspot(){
+  const g=currentGhost();
+  if(!g || caught.has(g.id) || photoMode){
+    ghostHotspot.style.display="none";return;
+  }
+  const dy=wrapPi(g.yaw-effectiveYaw());
+  const dp=g.pitch-effectivePitch();
+  const fovY=75*Math.PI/180;
+  const fovX=2*Math.atan(Math.tan(fovY/2)*(innerWidth/innerHeight));
+
+  if(Math.abs(dy)>fovX*.62 || Math.abs(dp)>fovY*.62){
+    ghostHotspot.style.display="none";return;
+  }
+  const x=.5 + Math.tan(dy)/Math.tan(fovX/2)*.5;
+  const y=.5 - Math.tan(dp)/Math.tan(fovY/2)*.5;
+  ghostHotspot.style.left=(x*100)+"%";
+  ghostHotspot.style.top=(y*100)+"%";
+  hotspotImg.src=g.file;
+  hotspotImg.alt=g.name;
+  ghostHotspot.style.display="block";
+}
+
+ghostHotspot.addEventListener("click",()=>{
+  const g=currentGhost(); if(!g)return;
+  caught.add(g.id);
+  localStorage.setItem("awooCaughtGhosts",JSON.stringify([...caught]));
+  lastCapturedGhost=g;
+  updateProgress();
+  renderAlbum();
+  captureGhostImg.src=g.file;
+  captureName.textContent=`「${g.name}」已加入你的萌鬼圖鑑！`;
+  openModal(captureModal);
+  ghostHotspot.style.display="none";
+});
+
+/* ---------- scenes ---------- */
+function buildSceneNav(){
+  sceneNav.innerHTML="";
+  SCENES.forEach((s,i)=>{
+    const b=document.createElement("button");
+    b.className="sceneChip"+(i===currentScene?" active":"");
+    b.textContent=`${s.icon} ${s.name}`;
+    b.addEventListener("click",()=>switchScene(i));
+    sceneNav.appendChild(b);
+  });
+}
+function switchScene(i){
+  currentScene=i;
+  yaw=0;pitch=0;sensorBaseAlpha=null;sensorBaseBeta=null;sensorYaw=0;sensorPitch=0;
+  sceneLabel.textContent=`📍 ${SCENES[i].name}`;
+  photoSceneName.textContent=`📍 ${SCENES[i].name}`;
+  $$(".sceneChip").forEach((c,j)=>c.classList.toggle("active",j===i));
+  hint.textContent=i===0?"這裡是安全區，前往其他區域尋找萌鬼 👻":"轉動四周仔細找找，萌鬼可能藏在你背後！";
+  updateHotspot();
+}
+
+/* ---------- album ---------- */
+function updateProgress(){
+  progressEl.textContent=`萌鬼圖鑑　${caught.size} / 6`;
+  if(caught.size===6){
+    albumText.textContent="🎉 萌鬼軍團全員集合！大合照已解鎖。";
+    photoBtn.textContent="📸";
+    photoBtn.style.background="var(--yellow)";
+    photoBtn.style.color="#10214a";
+  }
+}
+function renderAlbum(){
+  ghostGrid.innerHTML="";
+  GHOSTS.forEach(g=>{
+    const card=document.createElement("div");
+    card.className="ghostCard"+(caught.has(g.id)?" caught":"");
+    card.innerHTML=`<img src="${g.file}" alt="${g.name}"><b>${caught.has(g.id)?g.name:"？？？"}</b><span>${caught.has(g.id)?"捕捉完成":"尚未發現"}</span>`;
+    ghostGrid.appendChild(card);
+  });
+}
+albumBtn.addEventListener("click",()=>{renderAlbum();openModal(albumModal)});
+
+/* ---------- capture popup ---------- */
+captureContinue.addEventListener("click",()=>closeModal(captureModal));
+capturePhotoNow.addEventListener("click",()=>{
+  closeModal(captureModal);
+  enterPhotoMode();
+});
+
+/* ---------- BGM ---------- */
+soundBtn.addEventListener("click",async()=>{
+  soundOn=!soundOn;
+  soundBtn.textContent=soundOn?"🔊":"🔇";
+  if(soundOn){try{await bgm.play()}catch(_){showToast("尚未放入 awoo-halloween-bgm.mp3")}}
+  else bgm.pause();
+});
+
+/* ---------- Photo mode ---------- */
+function syncPhotoGhosts(){
+  $$("[data-photo-ghost]").forEach((img,i)=>{
+    const g=GHOSTS[i];
+    img.src=g.file;
+    img.style.display=caught.has(g.id)?"block":"none";
+  });
+}
+function enterPhotoMode(){
+  photoMode=true;
+  hud.classList.add("hidden");
+  ghostHotspot.style.display="none";
+  photoPanel.classList.add("show");
+  syncPhotoGhosts();
+  photoSceneName.textContent=`📍 ${SCENES[currentScene].name}`;
+  showToast(caught.size===6?"萌鬼軍團大合照已解鎖！":"目前會加入你已捕捉的萌鬼");
+}
+photoBtn.addEventListener("click",enterPhotoMode);
+exitPhoto.addEventListener("click",()=>{
+  photoMode=false;photoPanel.classList.remove("show");hud.classList.remove("hidden");updateHotspot()
+});
+pickPetBtn.addEventListener("click",()=>petInput.click());
+petInput.addEventListener("change",()=>{
+  const file=petInput.files&&petInput.files[0]; if(!file)return;
+  const img=new Image();
+  img.onload=()=>{
+    petImage=img;
+    petPreview.src=img.src;
+    petPreviewWrap.style.display="block";
   };
+  img.src=URL.createObjectURL(file);
+});
 
-  // ---------- THREE 基礎 ----------
-  const renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: true,
-    alpha: false
-  });
+/* ---------- Story composition ---------- */
+function drawCover(ctx,img,x,y,w,h){
+  const ir=img.width/img.height, tr=w/h;
+  let sx=0,sy=0,sw=img.width,sh=img.height;
+  if(ir>tr){sw=img.height*tr;sx=(img.width-sw)/2}
+  else{sh=img.width/tr;sy=(img.height-sh)/2}
+  ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
+}
+function drawContain(ctx,img,x,y,w,h){
+  const s=Math.min(w/img.width,h/img.height);
+  const dw=img.width*s,dh=img.height*s;
+  ctx.drawImage(img,x+(w-dw)/2,y+(h-dh)/2,dw,dh);
+}
+function roundedRect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
+}
+async function imageReady(src){
+  const i=new Image(); i.src=src;
+  if(i.decode) await i.decode(); else await new Promise(r=>i.onload=r);
+  return i;
+}
+async function makeStory(){
+  if(!petImage){showToast("先拍／選一張毛孩照片 🐾");return}
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  loaderText.textContent="正在生成萌鬼合照…";
+  loader.classList.add("show");
+  try{
+    renderPano();
+    const out=resultCanvas;
+    const ctx=out.getContext("2d");
+    ctx.clearRect(0,0,1080,1920);
 
-  const scene = new THREE.Scene();
+    // Current panorama angle as background
+    drawCover(ctx,canvas,0,0,1080,1920);
 
-  const camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1100
-  );
+    // readable gradient
+    const grad=ctx.createLinearGradient(0,0,0,1920);
+    grad.addColorStop(0,"rgba(3,10,30,.23)");
+    grad.addColorStop(.55,"rgba(0,0,0,0)");
+    grad.addColorStop(1,"rgba(3,10,30,.38)");
+    ctx.fillStyle=grad;ctx.fillRect(0,0,1080,1920);
 
-  camera.position.set(0,0,0.01);
-  camera.rotation.order = "YXZ";
+    // Pet portrait card
+    ctx.save();
+    roundedRect(ctx,170,470,740,940,54);
+    ctx.clip();
+    drawCover(ctx,petImage,170,470,740,940);
+    ctx.restore();
+    ctx.strokeStyle="rgba(255,255,255,.92)";ctx.lineWidth=10;
+    roundedRect(ctx,170,470,740,940,54);ctx.stroke();
 
-  // 球體內側顯示全景
-  const geometry = new THREE.SphereGeometry(100, 64, 40);
-  geometry.scale(-1,1,1);
+    // Title
+    ctx.textAlign="center";
+    ctx.fillStyle="#FFD447";
+    ctx.font="900 62px system-ui,sans-serif";
+    ctx.fillText(caught.size===6?"aWoo 萌鬼軍團大合照":"aWoo 萌鬼合照",540,125);
+    ctx.fillStyle="rgba(255,255,255,.92)";
+    ctx.font="600 30px system-ui,sans-serif";
+    ctx.fillText(SCENES[currentScene].name+" · Halloween 2026",540,177);
 
-  const material = new THREE.MeshBasicMaterial({color:0xffffff});
-  const sphere = new THREE.Mesh(geometry, material);
-  scene.add(sphere);
+    // Mascots
+    const dog=await imageReady("awoo-halloween-npc.png");
+    drawContain(ctx,dog,25,1240,390,570);
 
-  let textures = {};
-  let currentScene = "entrance";
-
-  // ---------- 視角狀態 ----------
-  let yaw = 0;
-  let pitch = 0;
-
-  let dragging = false;
-  let lastX = 0;
-  let lastY = 0;
-
-  // 手機感應角度偏移
-  let sensorEnabled = false;
-  let sensorHasData = false;
-  let sensorYaw = 0;
-  let sensorPitch = 0;
-  let sensorStartYaw = null;
-  let sensorStartPitch = null;
-
-  function clamp(v,min,max){
-    return Math.max(min,Math.min(max,v));
-  }
-
-  function applyCamera(){
-    let finalYaw = yaw;
-    let finalPitch = pitch;
-
-    if (sensorEnabled && sensorHasData) {
-      finalYaw += sensorYaw;
-      finalPitch += sensorPitch;
+    const positions=[
+      [10,220,230,250],[840,215,230,250],
+      [7,930,225,260],[850,950,220,260],
+      [225,180,210,230],[725,1450,250,270]
+    ];
+    for(let i=0;i<GHOSTS.length;i++){
+      if(!caught.has(GHOSTS[i].id))continue;
+      const gi=await imageReady(GHOSTS[i].file);
+      drawContain(ctx,gi,...positions[i]);
     }
 
-    finalPitch = clamp(finalPitch, -Math.PI/2 + 0.05, Math.PI/2 - 0.05);
+    // Footer brand
+    ctx.textAlign="right";ctx.fillStyle="rgba(255,255,255,.92)";
+    ctx.font="800 28px system-ui,sans-serif";ctx.fillText("aWoo · Always be here",1020,1870);
 
-    camera.rotation.x = finalPitch;
-    camera.rotation.y = finalYaw;
-    camera.rotation.z = 0;
+    openModal(resultModal);
+  }catch(e){
+    console.error(e);showToast("生成失敗，請再試一次");
+  }finally{
+    loader.classList.remove("show");
   }
+}
+makeStoryBtn.addEventListener("click",makeStory);
 
-  // ---------- 手指 / 滑鼠拖曳 ----------
-  function pointerDown(e){
-    // 場景切換按鈕不進入拖曳
-    if (e.target.closest && e.target.closest(".btn")) return;
-
-    dragging = true;
-    lastX = e.clientX;
-    lastY = e.clientY;
-
-    try { canvas.setPointerCapture(e.pointerId); } catch(_){}
-  }
-
-  function pointerMove(e){
-    if (!dragging) return;
-
-    const dx = e.clientX - lastX;
-    const dy = e.clientY - lastY;
-
-    lastX = e.clientX;
-    lastY = e.clientY;
-
-    const sensitivity = 0.0042;
-
-    yaw -= dx * sensitivity;
-    pitch -= dy * sensitivity;
-    pitch = clamp(pitch, -1.45, 1.45);
-
-    applyCamera();
-
-    if (!sensorHasData) {
-      statusEl.textContent = "✅ 拖曳控制正常";
+saveResult.addEventListener("click",()=>{
+  const a=document.createElement("a");
+  a.download="awoo-halloween-photo.png";
+  a.href=resultCanvas.toDataURL("image/png");
+  a.click();
+});
+shareResult.addEventListener("click",async()=>{
+  try{
+    const blob=await new Promise(r=>resultCanvas.toBlob(r,"image/png"));
+    const file=new File([blob],"awoo-halloween-photo.png",{type:"image/png"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:"aWoo 萌鬼軍團大合照"});
+    }else{
+      showToast("這台裝置不支援直接分享，請先儲存照片");
     }
-  }
+  }catch(e){}
+});
 
-  function pointerUp(e){
-    dragging = false;
-    try { canvas.releasePointerCapture(e.pointerId); } catch(_){}
-  }
-
-  canvas.addEventListener("pointerdown", pointerDown, {passive:false});
-  canvas.addEventListener("pointermove", pointerMove, {passive:false});
-  canvas.addEventListener("pointerup", pointerUp, {passive:false});
-  canvas.addEventListener("pointercancel", pointerUp, {passive:false});
-
-  // 防止 Safari 將拖曳當捲動
-  canvas.addEventListener("touchstart", e => e.preventDefault(), {passive:false});
-  canvas.addEventListener("touchmove", e => e.preventDefault(), {passive:false});
-
-  // ---------- 手機方向感應 ----------
-  function degToRad(d){ return d * Math.PI / 180; }
-
-  function orientationHandler(e){
-    if (e.alpha == null || e.beta == null || e.gamma == null) return;
-
-    /*
-      這裡不追求真實世界羅盤方位，只把感應值轉成「相對於
-      開始拿手機時」的視角變化，所以比較適合遊戲環景。
-    */
-    const alpha = degToRad(e.alpha);
-    const beta = degToRad(e.beta);
-
-    if (sensorStartYaw === null) {
-      sensorStartYaw = alpha;
-      sensorStartPitch = beta;
-    }
-
-    let dyaw = alpha - sensorStartYaw;
-
-    // 處理 0° / 360° 穿越
-    if (dyaw > Math.PI) dyaw -= Math.PI * 2;
-    if (dyaw < -Math.PI) dyaw += Math.PI * 2;
-
-    sensorYaw = -dyaw;
-    sensorPitch = clamp(beta - sensorStartPitch, -1.25, 1.25);
-
-    sensorHasData = true;
-    applyCamera();
-
-    statusEl.textContent = "✅ 手機方向感應正常";
-  }
-
-  function enableSensor(){
-    if (sensorEnabled) return;
-    sensorEnabled = true;
-    window.addEventListener("deviceorientation", orientationHandler, true);
-  }
-
-  async function askSensorPermission(){
-    try {
-      if (
-        typeof DeviceOrientationEvent !== "undefined" &&
-        typeof DeviceOrientationEvent.requestPermission === "function"
-      ) {
-        const result = await DeviceOrientationEvent.requestPermission();
-
-        if (result === "granted") {
-          enableSensor();
-        } else {
-          statusEl.textContent = "方向感應未允許，但仍可手指拖曳";
-        }
-      } else if ("DeviceOrientationEvent" in window) {
-        enableSensor();
-      } else {
-        statusEl.textContent = "此裝置無方向感應，可使用手指拖曳";
-      }
-    } catch(err) {
-      console.warn(err);
-      statusEl.textContent = "方向感應不可用，但仍可手指拖曳";
-    }
-  }
-
-  // ---------- 圖片載入 / 場景切換 ----------
-  function loadTexture(path){
-    return new Promise((resolve,reject)=>{
-      new THREE.TextureLoader().load(
-        path + "?v=9",
-        tex => {
-          if ("colorSpace" in tex && THREE.SRGBColorSpace) {
-            tex.colorSpace = THREE.SRGBColorSpace;
-          }
-          tex.needsUpdate = true;
-          resolve(tex);
-        },
-        undefined,
-        reject
-      );
-    });
-  }
-
-  async function loadScenes(){
-    statusEl.textContent = "正在載入 360° 場景…";
-
-    try {
-      const [entrance, harbour] = await Promise.all([
-        loadTexture(FILES.entrance),
-        loadTexture(FILES.harbour)
-      ]);
-
-      textures.entrance = entrance;
-      textures.harbour = harbour;
-
-      material.map = textures.entrance;
-      material.needsUpdate = true;
-
-      statusEl.textContent = "👆 手指拖曳畫面試試看";
-    } catch(err) {
-      console.error(err);
-
-      errorBox.style.display = "block";
-      errorBox.innerHTML =
-        "找不到 360° 圖片。請確認 <b>index.html</b> 和以下兩張圖放在同一層：<br><br>" +
-        FILES.entrance + "<br>" +
-        FILES.harbour;
-    }
-  }
-
-  function changeScene(which){
-    if (!textures[which]) {
-      statusEl.textContent = "場景仍在載入";
-      return;
-    }
-
-    currentScene = which;
-
-    material.map = textures[which];
-    material.needsUpdate = true;
-
-    const entrance = which === "entrance";
-
-    entranceBtn.classList.toggle("active", entrance);
-    harbourBtn.classList.toggle("active", !entrance);
-
-    sceneName.textContent = entrance ? "🏠 入口廣場" : "🎃 南瓜港";
-    statusEl.textContent = entrance ? "已切換：入口廣場" : "已切換：南瓜港";
-  }
-
-  entranceBtn.addEventListener("click", e=>{
-    e.stopPropagation();
-    changeScene("entrance");
-  });
-
-  harbourBtn.addEventListener("click", e=>{
-    e.stopPropagation();
-    changeScene("harbour");
-  });
-
-  // ---------- 開始 ----------
-  enterBtn.addEventListener("click", async ()=>{
-    await askSensorPermission();
-    start.style.display = "none";
-
-    // 給感應一點時間，如果沒有資料，明確告訴使用者先拖曳
-    setTimeout(()=>{
-      if (!sensorHasData) {
-        statusEl.textContent = "👆 先用手指拖曳；若手機感應可用會自動啟用";
-      }
-    },1200);
-  });
-
-  // ---------- resize / render ----------
-  function resize(){
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-
-    renderer.setSize(w,h,false);
-    camera.aspect = w/h;
-    camera.updateProjectionMatrix();
-  }
-
-  window.addEventListener("resize",resize);
-  window.addEventListener("orientationchange",()=>{
-    setTimeout(resize,200);
-  });
-
+/* ---------- Start ---------- */
+async function start(){
   resize();
+  await preloadScenes();
+  buildSceneNav();
+  renderAlbum();
+  updateProgress();
+  renderPano();
 
-  function animate(){
-    requestAnimationFrame(animate);
-    applyCamera();
-    renderer.render(scene,camera);
+  // Intro: 1.7 sec → welcome
+  setTimeout(()=>{
+    intro.style.transition="opacity .35s ease";
+    intro.style.opacity="0";
+    setTimeout(()=>{
+      intro.style.display="none";
+      welcome.style.display="grid";
+    },350);
+  },1700);
+}
+enterTown.addEventListener("click",async()=>{
+  await enableSensor();
+  welcome.style.display="none";
+  hud.classList.remove("hidden");
+  if(soundOn){
+    bgm.volume=.48;
+    try{await bgm.play()}catch(_){soundBtn.textContent="🔇";soundOn=false}
   }
+  showToast("小鎮裡有 6 隻萌鬼，開始尋找吧！ 👻");
+});
 
-  animate();
-  loadScenes();
+/* ---------- render loop ---------- */
+function frame(){
+  renderPano();
+  updateHotspot();
+  requestAnimationFrame(frame);
+}
+start().then(frame);
 
 })();
 </script>
