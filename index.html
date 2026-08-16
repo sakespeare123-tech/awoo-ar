@@ -14,21 +14,85 @@
       margin: 0;
       overflow: hidden;
       font-family: Arial, "Noto Sans TC", sans-serif;
+      background: #0b1230;
     }
 
     #counter {
       position: fixed;
-      top: 20px;
+      top: 18px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 10;
-      background: rgba(20, 15, 45, 0.82);
+      background: rgba(13, 24, 66, .88);
       color: white;
-      padding: 10px 20px;
-      border-radius: 30px;
+      padding: 10px 18px;
+      border-radius: 24px;
       font-weight: bold;
       font-size: 16px;
       pointer-events: none;
+    }
+
+    #intro {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      background: rgba(5, 8, 28, .40);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    #npcWrap {
+      width: min(92vw, 520px);
+      text-align: center;
+      animation: npcEnter .8s cubic-bezier(.2,.8,.2,1);
+    }
+
+    #npc {
+      width: min(72vw, 360px);
+      max-height: 52vh;
+      object-fit: contain;
+      animation: floatNpc 2.2s ease-in-out infinite;
+      filter: drop-shadow(0 12px 18px rgba(0,0,0,.35));
+    }
+
+    #dialogue {
+      background: rgba(255,255,255,.96);
+      color: #14265f;
+      border-radius: 24px;
+      padding: 18px 18px 16px;
+      margin-top: -8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.3);
+    }
+
+    #dialogue h2 {
+      margin: 0 0 8px;
+      font-size: 23px;
+    }
+
+    #dialogue p {
+      margin: 0 0 14px;
+      line-height: 1.55;
+      font-size: 15px;
+    }
+
+    #startBtn {
+      border: none;
+      background: #ffb51b;
+      color: #10245f;
+      font-weight: 800;
+      font-size: 17px;
+      padding: 12px 28px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #d88c00;
+    }
+
+    #startBtn:active {
+      transform: translateY(2px);
+      box-shadow: 0 3px 0 #d88c00;
     }
 
     #message {
@@ -38,7 +102,7 @@
       bottom: 45px;
       transform: translateX(-50%);
       z-index: 20;
-      background: rgba(20, 15, 45, 0.92);
+      background: rgba(13,24,66,.94);
       color: white;
       padding: 18px 28px;
       border-radius: 20px;
@@ -47,14 +111,32 @@
       box-shadow: 0 8px 30px rgba(0,0,0,.35);
     }
 
-    #message strong {
-      font-size: 22px;
+    @keyframes npcEnter {
+      from {
+        opacity: 0;
+        transform: translateY(100px) scale(.85);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
-    #message small {
-      display: block;
-      margin-top: 6px;
-      opacity: .85;
+    @keyframes floatNpc {
+      0%,100% { transform: translateY(0) rotate(-1deg); }
+      50% { transform: translateY(-10px) rotate(1deg); }
+    }
+
+    .introHide {
+      animation: introOut .55s ease forwards;
+    }
+
+    @keyframes introOut {
+      to {
+        opacity: 0;
+        transform: scale(1.04);
+        pointer-events: none;
+      }
     }
   </style>
 </head>
@@ -65,11 +147,27 @@
     🎃 萌鬼圖鑑　0 / 3
   </div>
 
-  <div id="message">
-    <strong>✨ 捕捉成功！</strong>
-    <small>你找到蝙蝠老鼠了</small>
+  <div id="intro">
+    <div id="npcWrap">
+      <img id="npc" src="./awoo-npc.png">
+
+      <div id="dialogue">
+        <h2>嗚～歡迎來到 aWoo 萬聖小鎮！</h2>
+
+        <p>
+          城裡藏著 3 隻偷偷跑出來的萌鬼。<br>
+          轉動手機探索小鎮，找到牠們後點一下就能捕捉！
+        </p>
+
+        <button id="startBtn">開始冒險 🎃</button>
+      </div>
+    </div>
   </div>
 
+  <div id="message">
+    <strong>✨ 捕捉成功！</strong><br>
+    <small>你找到蝙蝠老鼠了</small>
+  </div>
 
   <a-scene
     cursor="rayOrigin: mouse"
@@ -82,15 +180,11 @@
       <img id="batmouse" src="./batmouse.png">
     </a-assets>
 
-
-    <!-- 360度萬聖小鎮 -->
     <a-sky
       src="#town"
       rotation="0 -90 0">
     </a-sky>
 
-
-    <!-- 第一隻萌鬼：蝙蝠老鼠 -->
     <a-image
       id="monster1"
       class="clickable"
@@ -99,6 +193,7 @@
       width="1.5"
       height="1.5"
       transparent="true"
+      visible="false"
       animation="property: position;
                  dir: alternate;
                  dur: 1300;
@@ -106,24 +201,31 @@
                  to: 3 1.45 -5">
     </a-image>
 
-
-    <!-- 玩家視角 -->
     <a-camera
       look-controls="touchEnabled: true; mouseEnabled: true">
     </a-camera>
 
   </a-scene>
 
-
   <script>
     let captured = false;
 
+    const intro = document.querySelector('#intro');
+    const startBtn = document.querySelector('#startBtn');
     const monster = document.querySelector('#monster1');
     const counter = document.querySelector('#counter');
     const message = document.querySelector('#message');
 
-    monster.addEventListener('click', function () {
+    startBtn.addEventListener('click', () => {
+      intro.classList.add('introHide');
 
+      setTimeout(() => {
+        intro.style.display = 'none';
+        monster.setAttribute('visible', 'true');
+      }, 550);
+    });
+
+    monster.addEventListener('click', function () {
       if (captured) return;
 
       captured = true;
