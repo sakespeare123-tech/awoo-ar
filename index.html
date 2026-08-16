@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#071a3d">
 <title>aWoo 萬聖小鎮</title>
+<!-- aWoo Halloween build: 20260817-0214 robust-loader -->
 
 <style>
 :root{
@@ -268,7 +269,7 @@ button{font:inherit}
 <canvas id="panoCanvas"></canvas>
 <div id="darkFade"></div>
 
-<audio id="bgm" src="awoo-halloween-bgm.mp3" loop preload="none"></audio>
+<audio id="bgm" src="./awoo-halloween-bgm.mp3?v=20260817-0214" loop preload="none"></audio>
 
 <!-- Intro -->
 <section id="intro">
@@ -386,6 +387,8 @@ button{font:inherit}
 <script>
 (() => {
 "use strict";
+
+const ASSET_VERSION = "20260817-0214";
 
 /* =========================================================
    aWoo Halloween - self contained panorama engine
@@ -600,30 +603,83 @@ function createTexture(img){
   return tex;
 }
 
-function loadImage(src){
-  return new Promise((resolve,reject)=>{
-    const img = new Image();
-    img.onload=()=>resolve(img);
-    img.onerror=()=>reject(new Error("找不到："+src));
-    img.src=src+"?v=20260817";
-  });
+function assetUrl(src){
+  return "./" + src.replace(/^\.?\//,"") + "?v=" + encodeURIComponent(ASSET_VERSION);
 }
 
-async function preloadScenes(){
-  loader.classList.add("show");
-  try{
-    for(let i=0;i<SCENES.length;i++){
-      loaderText.textContent=`載入小鎮場景 ${i+1} / ${SCENES.length}…`;
-      const img=await loadImage(SCENES[i].file);
-      images[i]=img;
-      textures[i]=createTexture(img);
-    }
-  }catch(e){
-    alert(e.message+"\n\n請確認檔名與 index.html 放在 GitHub 同一層。");
-    throw e;
-  }finally{
-    loader.classList.remove("show");
+async function loadImage(src){
+  const url = assetUrl(src);
+  const response = await fetch(url, {cache:"no-store"});
+  if(!response.ok){
+    throw new Error(`找不到：${src}（HTTP ${response.status}）`);
   }
+
+  const blob = await response.blob();
+  if(!blob.type.startsWith("image/")){
+    throw new Error(`檔案不是圖片：${src}`);
+  }
+
+  const objectUrl = URL.createObjectURL(blob);
+  try{
+    const img = new Image();
+    await new Promise((resolve,reject)=>{
+      img.onload=resolve;
+      img.onerror=()=>reject(new Error(`圖片無法解碼：${src}`));
+      img.src=objectUrl;
+    });
+    return img;
+  }finally{
+    // Delay revoke until image decode is complete.
+    setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);
+  }
+}
+
+async function ensureSceneLoaded(index, showLoader=true){
+  if(textures[index] && images[index]) return true;
+
+  if(showLoader){
+    loaderText.textContent=`正在載入「${SCENES[index].name}」…`;
+    loader.classList.add("show");
+  }
+
+  try{
+    const img=await loadImage(SCENES[index].file);
+    images[index]=img;
+    textures[index]=createTexture(img);
+    return true;
+  }catch(e){
+    console.error(e);
+    showToast(`載入失敗：${SCENES[index].name}`,2600);
+    alert(
+      `${e.message}
+
+` +
+      `請確認 GitHub 根目錄有：
+${SCENES[index].file}
+
+` +
+      `並且 index.html 與圖片放在同一層。`
+    );
+    return false;
+  }finally{
+    if(showLoader) loader.classList.remove("show");
+  }
+}
+
+async function preloadEntrance(){
+  return await ensureSceneLoaded(0,true);
+}
+
+function backgroundPreload(){
+  // Entrance is already loaded. Load the rest one by one without blocking gameplay.
+  let i=1;
+  const next=async()=>{
+    if(i>=SCENES.length) return;
+    await ensureSceneLoaded(i,false);
+    i++;
+    setTimeout(next,180);
+  };
+  setTimeout(next,500);
 }
 
 function resize(){
@@ -641,6 +697,7 @@ function effectiveYaw(){return yaw+(sensorEnabled?sensorYaw:0)}
 function effectivePitch(){return clamp(pitch+(sensorEnabled?sensorPitch:0),-1.42,1.42)}
 
 function renderPano(targetCanvas=null){
+  if(!textures[currentScene]) return;
   const viewYaw=effectiveYaw(), viewPitch=effectivePitch();
   gl.useProgram(program);
   gl.activeTexture(gl.TEXTURE0);
@@ -755,13 +812,21 @@ function buildSceneNav(){
     sceneNav.appendChild(b);
   });
 }
-function switchScene(i){
+async function switchScene(i){
+  if(i===currentScene && textures[i]) return;
+
+  const ok=await ensureSceneLoaded(i,true);
+  if(!ok) return;
+
   currentScene=i;
   yaw=0;pitch=0;sensorBaseAlpha=null;sensorBaseBeta=null;sensorYaw=0;sensorPitch=0;
   sceneLabel.textContent=`📍 ${SCENES[i].name}`;
   photoSceneName.textContent=`📍 ${SCENES[i].name}`;
   $$(".sceneChip").forEach((c,j)=>c.classList.toggle("active",j===i));
-  hint.textContent=i===0?"這裡是安全區，前往其他區域尋找萌鬼 👻":"轉動四周仔細找找，萌鬼可能藏在你背後！";
+  hint.textContent=i===0
+    ?"這裡是安全區，前往其他區域尋找萌鬼 👻"
+    :"轉動四周仔細找找，萌鬼可能藏在你背後！";
+  renderPano();
   updateHotspot();
 }
 
@@ -852,9 +917,7 @@ function roundedRect(ctx,x,y,w,h,r){
   ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
 }
 async function imageReady(src){
-  const i=new Image(); i.src=src;
-  if(i.decode) await i.decode(); else await new Promise(r=>i.onload=r);
-  return i;
+  return await loadImage(src);
 }
 async function makeStory(){
   if(!petImage){showToast("先拍／選一張毛孩照片 🐾");return}
@@ -944,11 +1007,21 @@ shareResult.addEventListener("click",async()=>{
 /* ---------- Start ---------- */
 async function start(){
   resize();
-  await preloadScenes();
+
+  const entranceOK=await preloadEntrance();
+  if(!entranceOK){
+    welcome.style.display="none";
+    intro.style.display="none";
+    return;
+  }
+
   buildSceneNav();
   renderAlbum();
   updateProgress();
   renderPano();
+
+  // Load remaining scenes after the game is already usable.
+  backgroundPreload();
 
   // Intro: 1.7 sec → welcome
   setTimeout(()=>{
