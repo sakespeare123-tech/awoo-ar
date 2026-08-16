@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#071a3d">
 <title>aWoo 萬聖小鎮</title>
-<!-- aWoo Halloween build: 20260817-0214 robust-loader -->
+<!-- aWoo Halloween build: 20260817-0218 panorama-fix -->
 
 <style>
 :root{
@@ -269,7 +269,7 @@ button{font:inherit}
 <canvas id="panoCanvas"></canvas>
 <div id="darkFade"></div>
 
-<audio id="bgm" src="./awoo-halloween-bgm.mp3?v=20260817-0214" loop preload="none"></audio>
+<audio id="bgm" src="./awoo-halloween-bgm.mp3?v=20260817-0218" loop preload="none"></audio>
 
 <!-- Intro -->
 <section id="intro">
@@ -388,7 +388,7 @@ button{font:inherit}
 (() => {
 "use strict";
 
-const ASSET_VERSION = "20260817-0214";
+const ASSET_VERSION = "20260817-0218";
 
 /* =========================================================
    aWoo Halloween - self contained panorama engine
@@ -595,7 +595,7 @@ function createTexture(img){
   const tex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D,tex);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
