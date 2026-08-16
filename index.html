@@ -1,43 +1,147 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-  <title>aWoo Halloween AR</title>
+  <title>aWoo 萬聖小鎮</title>
 
-  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, "Noto Sans TC", sans-serif;
+    }
+
+    #counter {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(20, 15, 45, 0.82);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-weight: bold;
+      font-size: 16px;
+      pointer-events: none;
+    }
+
+    #message {
+      display: none;
+      position: fixed;
+      left: 50%;
+      bottom: 45px;
+      transform: translateX(-50%);
+      z-index: 20;
+      background: rgba(20, 15, 45, 0.92);
+      color: white;
+      padding: 18px 28px;
+      border-radius: 20px;
+      text-align: center;
+      min-width: 220px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.35);
+    }
+
+    #message strong {
+      font-size: 22px;
+    }
+
+    #message small {
+      display: block;
+      margin-top: 6px;
+      opacity: .85;
+    }
+  </style>
 </head>
 
 <body>
 
+  <div id="counter">
+    🎃 萌鬼圖鑑　0 / 3
+  </div>
+
+  <div id="message">
+    <strong>✨ 捕捉成功！</strong>
+    <small>你找到蝙蝠老鼠了</small>
+  </div>
+
+
   <a-scene
-    mindar-image="imageTargetSrc: ./targets.mind;"
-    color-space="sRGB"
-    renderer="colorManagement: true, physicallyCorrectLights"
+    cursor="rayOrigin: mouse"
+    raycaster="objects: .clickable"
     vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false">
+    device-orientation-permission-ui="enabled: true">
 
     <a-assets>
-      <img id="awooCharacter" src="./batmouse.png">
+      <img id="town" src="./town360.png">
+      <img id="batmouse" src="./batmouse.png">
     </a-assets>
 
+
+    <!-- 360度萬聖小鎮 -->
+    <a-sky
+      src="#town"
+      rotation="0 -90 0">
+    </a-sky>
+
+
+    <!-- 第一隻萌鬼：蝙蝠老鼠 -->
+    <a-image
+      id="monster1"
+      class="clickable"
+      src="#batmouse"
+      position="3 1.2 -5"
+      width="1.5"
+      height="1.5"
+      transparent="true"
+      animation="property: position;
+                 dir: alternate;
+                 dur: 1300;
+                 loop: true;
+                 to: 3 1.45 -5">
+    </a-image>
+
+
+    <!-- 玩家視角 -->
     <a-camera
-      position="0 0 0"
-      look-controls="enabled: false">
+      look-controls="touchEnabled: true; mouseEnabled: true">
     </a-camera>
 
-    <a-entity mindar-image-target="targetIndex: 0">
-      <a-image
-        src="#awooCharacter"
-        position="0 0 0"
-        height="1"
-        width="1">
-      </a-image>
-    </a-entity>
-
   </a-scene>
+
+
+  <script>
+    let captured = false;
+
+    const monster = document.querySelector('#monster1');
+    const counter = document.querySelector('#counter');
+    const message = document.querySelector('#message');
+
+    monster.addEventListener('click', function () {
+
+      if (captured) return;
+
+      captured = true;
+
+      monster.setAttribute(
+        'animation__catch',
+        'property: scale; to: 0 0 0; dur: 500; easing: easeInBack'
+      );
+
+      counter.innerHTML = '🎃 萌鬼圖鑑　1 / 3';
+
+      message.style.display = 'block';
+
+      setTimeout(() => {
+        message.style.display = 'none';
+      }, 2500);
+    });
+  </script>
 
 </body>
 </html>
