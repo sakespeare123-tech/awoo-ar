@@ -317,7 +317,7 @@
 
     <div class="controls">
       <button id="resetBtn" class="control-btn secondary">↺ 回到入口</button>
-      <button id="pumpkinBtn" class="control-btn">🎃 前往南瓜巷</button>
+      <button id="pumpkinBtn" class="control-btn">🎃 前往南瓜港</button>
     </div>
   </div>
 
@@ -327,7 +327,7 @@
       <p>目前先開放入口廣場。後續場景圖片完成後，這份 index 不需要重做，只要把場景檔名接進來即可。</p>
       <div class="route">
         <div>① 入口廣場 ✅</div>
-        <div>② 南瓜巷 🔒</div>
+        <div>② 南瓜港 ✅</div>
         <div>③ 魔女雜貨店 🔒</div>
         <div>④ 墓園 🔒</div>
         <div>⑤ 廢棄車站 🔒</div>
@@ -338,7 +338,7 @@
     </div>
   </div>
 
-  <div id="toast" class="toast">南瓜巷還沒解鎖 🎃</div>
+  <div id="toast" class="toast">正在前往南瓜港 🎃</div>
 
   <a-scene
     vr-mode-ui="enabled: false"
@@ -351,6 +351,11 @@
       <img
         id="entrancePanorama"
         src="awoo-halloween-town-01-entrance.png"
+        crossorigin="anonymous"
+      />
+      <img
+        id="harbourPanorama"
+        src="awoo-halloween-town-02-pumpkin-harbour.png"
         crossorigin="anonymous"
       />
     </a-assets>
@@ -433,12 +438,27 @@
       showToast('已回到入口方向');
     });
 
+    function switchScene(assetId, rotationY = -90) {
+      const sky = document.getElementById('sky');
+      sky.setAttribute('src', `#${assetId}`);
+      sky.setAttribute('rotation', `0 ${rotationY} 0`);
+      camera.setAttribute('rotation', '0 0 0');
+    }
+
+    let currentScene = 'entrance';
+
     pumpkinBtn.addEventListener('click', () => {
-      /*
-        第二張環景完成後，我們會把這裡改成：
-        switchScene('awoo-halloween-town-02-pumpkin-alley.png')
-      */
-      showToast('下一步：加入南瓜巷 360° 場景 🎃');
+      if (currentScene === 'entrance') {
+        switchScene('harbourPanorama', -90);
+        currentScene = 'harbour';
+        pumpkinBtn.textContent = '🏠 回入口廣場';
+        showToast('已抵達南瓜港 🎃');
+      } else {
+        switchScene('entrancePanorama', -90);
+        currentScene = 'entrance';
+        pumpkinBtn.textContent = '🎃 前往南瓜港';
+        showToast('已回到入口廣場');
+      }
     });
 
     mapBtn.addEventListener('click', () => {
@@ -460,6 +480,11 @@
     pano.addEventListener('error', () => {
       alert(
         '找不到入口環景圖。請確認 index.html 和 awoo-halloween-town-01-entrance.png 放在同一個資料夾，而且檔名完全一致。'
+      );
+    });
+  </script>
+</body>
+</html>
       );
     });
   </script>
