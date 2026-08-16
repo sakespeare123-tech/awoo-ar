@@ -1,492 +1,222 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#08142f" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>aWoo 萬聖小鎮</title>
-
-  <!-- A-Frame 1.8.0 -->
   <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
 
   <style>
-    :root {
-      --awoo-blue: #0b2d67;
-      --awoo-yellow: #ffd84d;
-      --awoo-orange: #f59a23;
-      --panel: rgba(8, 14, 35, .82);
-      --white: #fffdf7;
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#050914;font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif}
+    a-scene{position:fixed!important;inset:0!important;z-index:1!important}
+    #ui{position:fixed;inset:0;z-index:9999;pointer-events:none}
+    .top{
+      position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;right:14px;
+      display:flex;justify-content:space-between;align-items:center;gap:10px
     }
-
-    * { box-sizing: border-box; }
-
-    html, body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      overflow: hidden;
-      background: #050914;
-      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC",
-        "PingFang TC", "Microsoft JhengHei", sans-serif;
+    .brand,.pill,.sceneBtn{
+      background:rgba(5,12,31,.86);border:1px solid rgba(255,255,255,.16);color:#fff;
+      box-shadow:0 8px 25px rgba(0,0,0,.28);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)
     }
-
-    a-scene {
-      width: 100%;
-      height: 100%;
+    .brand{padding:10px 14px;border-radius:16px}
+    .brand b{display:block;color:#ffd84d;font-size:16px}
+    .brand span{font-size:11px;opacity:.72}
+    .pill{border-radius:999px;padding:10px 13px;font-size:12px}
+    .bottom{
+      position:absolute;left:50%;bottom:max(22px,env(safe-area-inset-bottom));transform:translateX(-50%);
+      width:min(94%,520px);display:grid;grid-template-columns:1fr 1fr;gap:10px;pointer-events:auto
     }
-
-    .ui {
-      position: fixed;
-      inset: 0;
-      z-index: 10;
-      pointer-events: none;
+    .sceneBtn{
+      min-height:52px;border-radius:16px;font-size:15px;font-weight:800;cursor:pointer;
+      touch-action:manipulation;-webkit-tap-highlight-color:transparent
     }
-
-    .topbar {
-      position: absolute;
-      top: max(14px, env(safe-area-inset-top));
-      left: 50%;
-      transform: translateX(-50%);
-      width: min(calc(100% - 28px), 520px);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      pointer-events: auto;
+    .sceneBtn.active{background:#ffd84d;color:#15234b;border-color:#ffd84d}
+    #status{
+      position:absolute;left:50%;bottom:92px;transform:translateX(-50%);
+      background:rgba(5,12,31,.82);color:white;border-radius:999px;padding:9px 14px;
+      font-size:13px;white-space:nowrap;max-width:90%;overflow:hidden;text-overflow:ellipsis
     }
-
-    .brand,
-    .map-btn {
-      border: 1px solid rgba(255,255,255,.16);
-      background: var(--panel);
-      color: var(--white);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 10px 30px rgba(0,0,0,.22);
+    #start{
+      position:fixed;inset:0;z-index:20000;display:grid;place-items:center;padding:24px;
+      background:linear-gradient(180deg,#07152f,#030711);color:white
     }
-
-    .brand {
-      border-radius: 18px;
-      padding: 10px 14px;
-      line-height: 1.05;
+    .card{
+      width:min(100%,420px);padding:28px 24px;border-radius:26px;text-align:center;
+      background:rgba(9,17,42,.92);border:1px solid rgba(255,255,255,.14)
     }
-
-    .brand b {
-      display: block;
-      color: var(--awoo-yellow);
-      font-size: 18px;
-      letter-spacing: .3px;
+    .card .emoji{font-size:52px}
+    .card h1{margin:8px 0;color:#ffd84d}
+    .card p{line-height:1.65;opacity:.82;font-size:14px}
+    #enter{
+      width:100%;height:54px;border:0;border-radius:16px;background:#ffd84d;color:#12214a;
+      font-size:17px;font-weight:900;cursor:pointer;touch-action:manipulation
     }
-
-    .brand span {
-      display: block;
-      margin-top: 4px;
-      font-size: 11px;
-      opacity: .84;
+    #loading{
+      position:fixed;inset:0;z-index:15000;display:none;place-items:center;
+      background:rgba(2,6,18,.58);color:white;font-weight:800
     }
-
-    .map-btn {
-      border-radius: 999px;
-      padding: 11px 14px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    .hint {
-      position: absolute;
-      left: 50%;
-      bottom: calc(112px + env(safe-area-inset-bottom));
-      transform: translateX(-50%);
-      width: max-content;
-      max-width: calc(100% - 36px);
-      padding: 9px 14px;
-      border-radius: 999px;
-      background: rgba(6, 10, 24, .70);
-      color: #fff;
-      font-size: 13px;
-      text-align: center;
-      pointer-events: none;
-      transition: opacity .4s ease;
-    }
-
-    .controls {
-      position: absolute;
-      left: 50%;
-      bottom: max(22px, env(safe-area-inset-bottom));
-      transform: translateX(-50%);
-      width: min(calc(100% - 28px), 520px);
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      pointer-events: auto;
-    }
-
-    .control-btn {
-      min-height: 48px;
-      border: 0;
-      border-radius: 16px;
-      padding: 0 18px;
-      background: var(--awoo-yellow);
-      color: #132044;
-      font-weight: 800;
-      font-size: 15px;
-      cursor: pointer;
-      box-shadow: 0 10px 28px rgba(0,0,0,.28);
-    }
-
-    .control-btn.secondary {
-      background: rgba(10, 20, 50, .84);
-      color: white;
-      border: 1px solid rgba(255,255,255,.14);
-    }
-
-    .start-screen {
-      position: fixed;
-      inset: 0;
-      z-index: 30;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-      background:
-        radial-gradient(circle at 50% 35%, rgba(31,67,139,.52), transparent 44%),
-        linear-gradient(180deg, #07142f 0%, #030712 100%);
-      color: white;
-      text-align: center;
-    }
-
-    .start-card {
-      width: min(100%, 430px);
-      border: 1px solid rgba(255,255,255,.13);
-      border-radius: 28px;
-      padding: 28px 24px 24px;
-      background: rgba(8, 14, 35, .76);
-      box-shadow: 0 25px 70px rgba(0,0,0,.38);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-    }
-
-    .pumpkin {
-      font-size: 54px;
-      line-height: 1;
-      margin-bottom: 12px;
-    }
-
-    .start-card h1 {
-      margin: 0;
-      color: var(--awoo-yellow);
-      font-size: 29px;
-      letter-spacing: .5px;
-    }
-
-    .start-card p {
-      margin: 12px auto 20px;
-      max-width: 320px;
-      line-height: 1.7;
-      font-size: 14px;
-      color: rgba(255,255,255,.84);
-    }
-
-    .start-btn {
-      width: 100%;
-      height: 54px;
-      border: 0;
-      border-radius: 17px;
-      background: linear-gradient(135deg, #ffd84d, #ffad31);
-      color: #10214a;
-      font-size: 17px;
-      font-weight: 900;
-      cursor: pointer;
-    }
-
-    .small {
-      margin-top: 12px !important;
-      margin-bottom: 0 !important;
-      font-size: 11px !important;
-      opacity: .68;
-    }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      z-index: 25;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      background: rgba(1, 4, 14, .62);
-      pointer-events: auto;
-    }
-
-    .modal.show { display: flex; }
-
-    .modal-card {
-      width: min(100%, 440px);
-      border-radius: 24px;
-      padding: 22px;
-      background: #101933;
-      color: white;
-      border: 1px solid rgba(255,255,255,.12);
-      box-shadow: 0 25px 70px rgba(0,0,0,.4);
-    }
-
-    .modal-card h2 {
-      margin: 0 0 12px;
-      color: var(--awoo-yellow);
-      font-size: 21px;
-    }
-
-    .modal-card p {
-      line-height: 1.65;
-      margin: 0 0 16px;
-      opacity: .88;
-    }
-
-    .route {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      margin: 15px 0 18px;
-    }
-
-    .route div {
-      background: rgba(255,255,255,.07);
-      border-radius: 14px;
-      padding: 11px;
-      font-size: 13px;
-    }
-
-    .toast {
-      position: fixed;
-      left: 50%;
-      top: 50%;
-      z-index: 40;
-      transform: translate(-50%, -50%) scale(.96);
-      min-width: 220px;
-      max-width: calc(100% - 44px);
-      padding: 16px 20px;
-      border-radius: 18px;
-      background: rgba(8,14,35,.93);
-      color: white;
-      text-align: center;
-      font-weight: 700;
-      opacity: 0;
-      pointer-events: none;
-      transition: .22s ease;
-      border: 1px solid rgba(255,255,255,.12);
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-    }
-
-    @media (max-width: 520px) {
-      .brand span { display: none; }
-      .brand b { font-size: 16px; }
-      .control-btn { padding: 0 14px; font-size: 14px; }
-    }
+    #loading.show{display:grid}
+    @media(max-width:520px){.brand span{display:none}}
   </style>
 </head>
-
 <body>
 
-  <!-- 首次進入：iPhone 的動作感應權限需要由使用者點擊觸發 -->
-  <div id="startScreen" class="start-screen">
-    <div class="start-card">
-      <div class="pumpkin">🎃</div>
-      <h1>aWoo 萬聖小鎮</h1>
-      <p>
-        轉動手機探索 360° 小鎮，或用手指拖曳環顧四周。
-        找到道路後，準備前往下一個區域尋找萌鬼。
-      </p>
-      <button id="startBtn" class="start-btn">進入萬聖小鎮</button>
-      <p class="small">若手機詢問「動作與方向」權限，請選擇允許。</p>
-    </div>
+<div id="start">
+  <div class="card">
+    <div class="emoji">🎃</div>
+    <h1>aWoo 萬聖小鎮</h1>
+    <p>進入後可用手指拖曳，或轉動手機查看 360° 小鎮。</p>
+    <button id="enter" type="button">進入萬聖小鎮</button>
+  </div>
+</div>
+
+<div id="loading">場景載入中…</div>
+
+<div id="ui">
+  <div class="top">
+    <div class="brand"><b>aWoo 萬聖小鎮</b><span>Always be here</span></div>
+    <div id="sceneName" class="pill">📍 入口廣場</div>
   </div>
 
-  <div class="ui">
-    <div class="topbar">
-      <div class="brand">
-        <b>aWoo 萬聖小鎮</b>
-        <span>Always be here · Halloween Adventure</span>
-      </div>
-      <button id="mapBtn" class="map-btn">🗺️ 地圖</button>
-    </div>
+  <div id="status">拖曳畫面或轉動手機探索</div>
 
-    <div id="hint" class="hint">📱 轉動手機，或用手指拖曳探索小鎮</div>
-
-    <div class="controls">
-      <button id="resetBtn" class="control-btn secondary">↺ 回到入口</button>
-      <button id="pumpkinBtn" class="control-btn">🎃 前往南瓜港</button>
-    </div>
+  <div class="bottom">
+    <button id="entranceBtn" type="button" class="sceneBtn active">🏠 入口廣場</button>
+    <button id="harbourBtn" type="button" class="sceneBtn">🎃 南瓜港</button>
   </div>
+</div>
 
-  <div id="mapModal" class="modal">
-    <div class="modal-card">
-      <h2>🗺️ aWoo 萬聖小鎮地圖</h2>
-      <p>目前先開放入口廣場。後續場景圖片完成後，這份 index 不需要重做，只要把場景檔名接進來即可。</p>
-      <div class="route">
-        <div>① 入口廣場 ✅</div>
-        <div>② 南瓜港 ✅</div>
-        <div>③ 魔女雜貨店 🔒</div>
-        <div>④ 墓園 🔒</div>
-        <div>⑤ 廢棄車站 🔒</div>
-        <div>⑥ 糖果屋 🔒</div>
-        <div>⑦ 萌鬼廣場 🔒</div>
-      </div>
-      <button id="closeMapBtn" class="start-btn">繼續探索</button>
-    </div>
-  </div>
+<a-scene
+  vr-mode-ui="enabled:false"
+  device-orientation-permission-ui="enabled:false"
+  loading-screen="enabled:false"
+  renderer="antialias:true;colorManagement:true"
+>
+  <a-sky
+    id="sky"
+    src="awoo-halloween-town-01-entrance.png?v=3"
+    rotation="0 -90 0">
+  </a-sky>
 
-  <div id="toast" class="toast">正在前往南瓜港 🎃</div>
+  <a-entity
+    id="camera"
+    camera
+    look-controls="touchEnabled:true;mouseEnabled:true;magicWindowTrackingEnabled:true"
+    position="0 1.6 0">
+  </a-entity>
+</a-scene>
 
-  <a-scene
-    vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false"
-    loading-screen="enabled: false"
-    renderer="antialias: true; colorManagement: true"
-  >
-    <a-assets timeout="15000">
-      <!-- 這張 PNG 必須和 index.html 放在同一層資料夾 -->
-      <img
-        id="entrancePanorama"
-        src="awoo-halloween-town-01-entrance.png"
-        crossorigin="anonymous"
-      />
-      <img
-        id="harbourPanorama"
-        src="awoo-halloween-town-02-pumpkin-harbour.png"
-        crossorigin="anonymous"
-      />
-    </a-assets>
+<script>
+(function () {
+  "use strict";
 
-    <!-- 360° 入口廣場 -->
-    <a-sky
-      id="sky"
-      src="#entrancePanorama"
-      rotation="0 -90 0"
-    ></a-sky>
+  const ENTRANCE = "awoo-halloween-town-01-entrance.png";
+  const HARBOUR  = "awoo-halloween-town-02-pumpkin-harbour.png";
 
-    <!-- 相機：手機可方向感應，桌機/手機都可拖曳 -->
-    <a-entity
-      id="cameraRig"
-      camera
-      look-controls="touchEnabled: true; mouseEnabled: true; magicWindowTrackingEnabled: true"
-      position="0 1.6 0"
-      rotation="0 0 0"
-    ></a-entity>
-  </a-scene>
+  const start = document.getElementById("start");
+  const enter = document.getElementById("enter");
+  const sky = document.getElementById("sky");
+  const camera = document.getElementById("camera");
+  const loading = document.getElementById("loading");
+  const status = document.getElementById("status");
+  const sceneName = document.getElementById("sceneName");
+  const entranceBtn = document.getElementById("entranceBtn");
+  const harbourBtn = document.getElementById("harbourBtn");
 
-  <script>
-    const startScreen = document.getElementById('startScreen');
-    const startBtn = document.getElementById('startBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const pumpkinBtn = document.getElementById('pumpkinBtn');
-    const mapBtn = document.getElementById('mapBtn');
-    const mapModal = document.getElementById('mapModal');
-    const closeMapBtn = document.getElementById('closeMapBtn');
-    const toast = document.getElementById('toast');
-    const hint = document.getElementById('hint');
-    const camera = document.getElementById('cameraRig');
+  let switchNo = 0;
 
-    let toastTimer;
+  function requestOrientationPermission() {
+    try {
+      if (typeof DeviceOrientationEvent !== "undefined" &&
+          typeof DeviceOrientationEvent.requestPermission === "function") {
+        return DeviceOrientationEvent.requestPermission().catch(function(){ return "denied"; });
+      }
+    } catch(e) {}
+    return Promise.resolve("not-required");
+  }
 
-    function showToast(message) {
-      toast.textContent = message;
-      toast.classList.add('show');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => {
-        toast.classList.remove('show');
-      }, 1800);
-    }
+  function preload(url) {
+    return new Promise(function(resolve, reject) {
+      const img = new Image();
+      img.onload = function(){ resolve(url); };
+      img.onerror = reject;
+      img.src = url + "?v=3&preload=" + Date.now();
+    });
+  }
 
-    async function requestMotionPermission() {
-      /*
-        iOS 13+ 可能要求使用者點擊後才能請求方向感應權限。
-        Android / 其他瀏覽器沒有這個方法時會直接略過。
-      */
-      try {
-        if (
-          typeof DeviceOrientationEvent !== 'undefined' &&
-          typeof DeviceOrientationEvent.requestPermission === 'function'
-        ) {
-          const permission = await DeviceOrientationEvent.requestPermission();
-          if (permission !== 'granted') {
-            showToast('沒有開啟方向感應，仍可用手指拖曳探索');
-          }
+  function setButtons(which) {
+    entranceBtn.classList.toggle("active", which === "entrance");
+    harbourBtn.classList.toggle("active", which === "harbour");
+  }
+
+  async function changeScene(which) {
+    const mySwitch = ++switchNo;
+    const isEntrance = which === "entrance";
+    const file = isEntrance ? ENTRANCE : HARBOUR;
+    const label = isEntrance ? "入口廣場" : "南瓜港";
+
+    loading.classList.add("show");
+    status.textContent = "正在前往「" + label + "」…";
+
+    try {
+      // 先確認圖片本身真的可讀，避免按鈕看似沒反應。
+      await preload(file);
+      if (mySwitch !== switchNo) return;
+
+      // 直接用檔案 URL 換 a-sky，不再使用 #assetId。
+      sky.setAttribute("src", file + "?v=3&t=" + Date.now());
+      sky.setAttribute("rotation", "0 -90 0");
+
+      // 重設基本相機朝向。
+      camera.setAttribute("rotation", "0 0 0");
+
+      sceneName.textContent = (isEntrance ? "🏠 " : "🎃 ") + label;
+      status.textContent = "已抵達「" + label + "」";
+      setButtons(which);
+
+      setTimeout(function(){
+        if (status.textContent.indexOf("已抵達") === 0) {
+          status.textContent = "拖曳畫面或轉動手機探索";
         }
-      } catch (err) {
-        console.warn('Device orientation permission:', err);
-      }
-    }
-
-    startBtn.addEventListener('click', async () => {
-      await requestMotionPermission();
-      startScreen.style.display = 'none';
-
-      setTimeout(() => {
-        hint.style.opacity = '0';
-      }, 4200);
-    });
-
-    resetBtn.addEventListener('click', () => {
-      /*
-        look-controls 會管理實際觀看角度，因此這裡先重設基礎 rotation。
-        若之後要做真正的場景傳送，可在這裡一起重設場景。
-      */
-      camera.setAttribute('rotation', '0 0 0');
-      showToast('已回到入口方向');
-    });
-
-    function switchScene(assetId, rotationY = -90) {
-      const sky = document.getElementById('sky');
-      sky.setAttribute('src', `#${assetId}`);
-      sky.setAttribute('rotation', `0 ${rotationY} 0`);
-      camera.setAttribute('rotation', '0 0 0');
-    }
-
-    let currentScene = 'entrance';
-
-    pumpkinBtn.addEventListener('click', () => {
-      if (currentScene === 'entrance') {
-        switchScene('harbourPanorama', -90);
-        currentScene = 'harbour';
-        pumpkinBtn.textContent = '🏠 回入口廣場';
-        showToast('已抵達南瓜港 🎃');
-      } else {
-        switchScene('entrancePanorama', -90);
-        currentScene = 'entrance';
-        pumpkinBtn.textContent = '🎃 前往南瓜港';
-        showToast('已回到入口廣場');
-      }
-    });
-
-    mapBtn.addEventListener('click', () => {
-      mapModal.classList.add('show');
-    });
-
-    closeMapBtn.addEventListener('click', () => {
-      mapModal.classList.remove('show');
-    });
-
-    mapModal.addEventListener('click', (event) => {
-      if (event.target === mapModal) {
-        mapModal.classList.remove('show');
-      }
-    });
-
-    // 圖片載入失敗時提供明確提示
-    const pano = document.getElementById('entrancePanorama');
-    pano.addEventListener('error', () => {
+      }, 1800);
+    } catch (err) {
+      console.error(err);
+      status.textContent = "⚠️ 找不到 " + file;
       alert(
-        '找不到入口環景圖。請確認 index.html 和 awoo-halloween-town-01-entrance.png 放在同一個資料夾，而且檔名完全一致。'
+        "場景圖片載入失敗：\\n" + file +
+        "\\n\\n請確認這張 PNG 和 index.html 放在同一個資料夾，檔名完全一致。"
       );
-    });
-  </script>
-</body>
-</html>
-      );
-    });
-  </script>
+    } finally {
+      if (mySwitch === switchNo) loading.classList.remove("show");
+    }
+  }
+
+  // 用 pointerup，比 click 在部分手機 WebView 更穩。
+  entranceBtn.addEventListener("pointerup", function(e){
+    e.preventDefault();
+    changeScene("entrance");
+  });
+
+  harbourBtn.addEventListener("pointerup", function(e){
+    e.preventDefault();
+    changeScene("harbour");
+  });
+
+  // 桌機鍵盤 / 某些瀏覽器 fallback。
+  entranceBtn.addEventListener("click", function(){
+    if (!window.PointerEvent) changeScene("entrance");
+  });
+  harbourBtn.addEventListener("click", function(){
+    if (!window.PointerEvent) changeScene("harbour");
+  });
+
+  enter.addEventListener("click", async function(){
+    await requestOrientationPermission();
+    start.style.display = "none";
+  });
+
+})();
+</script>
 </body>
 </html>
