@@ -2,109 +2,411 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#06122c">
   <title>aWoo 萬聖小鎮</title>
+
+  <!-- 只借用 A-Frame 內建的 THREE，不使用 a-scene / look-controls -->
   <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
+
   <style>
     *{box-sizing:border-box}
-    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#050914;font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif}
-    #ui{position:fixed;inset:0;z-index:9999;pointer-events:none}
-    .top{position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;right:14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
-    .brand,.pill,.sceneBtn{background:rgba(5,12,31,.88);border:1px solid rgba(255,255,255,.16);color:#fff;box-shadow:0 8px 25px rgba(0,0,0,.28)}
-    .brand{padding:10px 14px;border-radius:16px}.brand b{display:block;color:#ffd84d;font-size:16px}.brand span{font-size:11px;opacity:.72}
-    .pill{border-radius:999px;padding:10px 13px;font-size:12px}
-    .bottom{position:absolute;left:50%;bottom:max(22px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(94%,520px);display:grid;grid-template-columns:1fr 1fr;gap:10px;pointer-events:auto}
-    .sceneBtn{min-height:52px;border-radius:16px;font-size:15px;font-weight:800;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-    .sceneBtn.active{background:#ffd84d;color:#15234b;border-color:#ffd84d}
-    #status{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);background:rgba(5,12,31,.84);color:#fff;border-radius:999px;padding:9px 14px;font-size:13px;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis}
-    #start{position:fixed;inset:0;z-index:20000;display:grid;place-items:center;padding:24px;background:linear-gradient(180deg,#07152f,#030711);color:white}
-    .card{width:min(100%,420px);padding:28px 24px;border-radius:26px;text-align:center;background:rgba(9,17,42,.94);border:1px solid rgba(255,255,255,.14)}
-    .card .emoji{font-size:52px}.card h1{margin:8px 0;color:#ffd84d}.card p{line-height:1.65;opacity:.82;font-size:14px}
-    #enter{width:100%;height:54px;border:0;border-radius:16px;background:#ffd84d;color:#12214a;font-size:17px;font-weight:900;cursor:pointer}
-    #debug{position:fixed;top:70px;left:14px;z-index:10000;background:rgba(0,0,0,.65);color:#fff;padding:7px 10px;border-radius:10px;font-size:11px;display:none}
+    html,body{
+      width:100%;height:100%;margin:0;overflow:hidden;
+      background:#030712;
+      font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif;
+      overscroll-behavior:none;
+      touch-action:none;
+    }
+
+    #viewer{
+      position:fixed;inset:0;
+      width:100%;height:100%;
+      z-index:1;
+      display:block;
+      touch-action:none;
+    }
+
+    #ui{
+      position:fixed;inset:0;
+      z-index:100;
+      pointer-events:none;
+    }
+
+    .top{
+      position:absolute;
+      top:max(14px,env(safe-area-inset-top));
+      left:14px;right:14px;
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+    }
+
+    .brand,.pill,.btn{
+      background:rgba(4,10,28,.86);
+      border:1px solid rgba(255,255,255,.16);
+      color:white;
+      box-shadow:0 10px 28px rgba(0,0,0,.28);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+    }
+
+    .brand{padding:10px 14px;border-radius:16px}
+    .brand b{display:block;color:#ffd84d;font-size:16px}
+    .brand small{opacity:.72}
+
+    .pill{
+      padding:10px 13px;
+      border-radius:999px;
+      font-size:12px;
+    }
+
+    #status{
+      position:absolute;
+      left:50%;bottom:94px;
+      transform:translateX(-50%);
+      background:rgba(4,10,28,.82);
+      color:#fff;
+      padding:9px 14px;
+      border-radius:999px;
+      font-size:13px;
+      white-space:nowrap;
+      max-width:90%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .bottom{
+      position:absolute;
+      left:50%;
+      bottom:max(22px,env(safe-area-inset-bottom));
+      transform:translateX(-50%);
+      width:min(94%,540px);
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      pointer-events:auto;
+    }
+
+    .btn{
+      min-height:52px;
+      border-radius:16px;
+      font-size:15px;
+      font-weight:850;
+      cursor:pointer;
+      touch-action:manipulation;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    .btn.active{
+      background:#ffd84d;
+      color:#142149;
+      border-color:#ffd84d;
+    }
+
+    #start{
+      position:fixed;inset:0;
+      z-index:1000;
+      display:grid;
+      place-items:center;
+      padding:24px;
+      background:
+        radial-gradient(circle at 50% 32%,rgba(33,72,151,.52),transparent 42%),
+        linear-gradient(180deg,#07152f,#02050d);
+      color:white;
+    }
+
+    .card{
+      width:min(100%,430px);
+      padding:28px 24px 24px;
+      text-align:center;
+      border-radius:28px;
+      background:rgba(8,15,38,.92);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:0 28px 80px rgba(0,0,0,.38);
+    }
+
+    .emoji{font-size:54px;line-height:1}
+    .card h1{margin:12px 0 8px;color:#ffd84d}
+    .card p{font-size:14px;line-height:1.7;opacity:.84;margin:0 0 18px}
+
+    #enter{
+      width:100%;height:54px;border:0;border-radius:17px;
+      background:linear-gradient(135deg,#ffd84d,#ffad31);
+      color:#10204a;font-size:17px;font-weight:900;
+      cursor:pointer;
+    }
+
+    #sensorNote{
+      margin-top:12px;
+      font-size:11px;
+      opacity:.62;
+      line-height:1.5;
+    }
+
+    #error{
+      display:none;
+      position:fixed;
+      z-index:2000;
+      left:16px;right:16px;top:50%;
+      transform:translateY(-50%);
+      padding:18px;
+      border-radius:18px;
+      background:#351017;
+      color:white;
+      line-height:1.6;
+    }
   </style>
 </head>
 <body>
+
+<canvas id="viewer"></canvas>
+
+<div id="ui">
+  <div class="top">
+    <div class="brand">
+      <b>aWoo 萬聖小鎮</b>
+      <small>Always be here</small>
+    </div>
+    <div id="sceneName" class="pill">🏠 入口廣場</div>
+  </div>
+
+  <div id="status">👆 手指拖曳畫面試試看</div>
+
+  <div class="bottom">
+    <button id="entranceBtn" class="btn active" type="button">🏠 入口廣場</button>
+    <button id="harbourBtn" class="btn" type="button">🎃 南瓜港</button>
+  </div>
+</div>
 
 <div id="start">
   <div class="card">
     <div class="emoji">🎃</div>
     <h1>aWoo 萬聖小鎮</h1>
-    <p>用手指拖曳，或轉動手機探索 360° 場景。</p>
+    <p>
+      進入後先用手指拖曳測試 360° 畫面。<br>
+      手機若支援方向感應，轉動手機也會跟著移動。
+    </p>
     <button id="enter" type="button">進入萬聖小鎮</button>
+    <div id="sensorNote">iPhone 若跳出「動作與方向」權限，請選擇允許。</div>
   </div>
 </div>
 
-<div id="ui">
-  <div class="top">
-    <div class="brand"><b>aWoo 萬聖小鎮</b><span>Always be here</span></div>
-    <div id="sceneName" class="pill">🏠 入口廣場</div>
-  </div>
-  <div id="status">拖曳畫面或轉動手機探索</div>
-  <div class="bottom">
-    <button id="entranceBtn" class="sceneBtn active" type="button">🏠 入口廣場</button>
-    <button id="harbourBtn" class="sceneBtn" type="button">🎃 南瓜港</button>
-  </div>
-</div>
-
-<div id="debug"></div>
-
-<a-scene
-  id="scene"
-  vr-mode-ui="enabled:false"
-  device-orientation-permission-ui="enabled:false"
-  loading-screen="enabled:false"
-  renderer="antialias:true;colorManagement:true"
->
-  <!-- 單一球體，材質由 Three.js 直接替換 -->
-  <a-entity
-    id="panoSphere"
-    geometry="primitive:sphere;radius:50;segmentsWidth:64;segmentsHeight:40"
-    material="shader:flat;side:back"
-    scale="-1 1 1">
-  </a-entity>
-
-  <a-entity
-    id="camera"
-    camera
-    look-controls="touchEnabled:true;mouseEnabled:true;magicWindowTrackingEnabled:true"
-    position="0 0 0">
-  </a-entity>
-</a-scene>
+<div id="error"></div>
 
 <script>
 (function(){
   "use strict";
+
+  const THREE = window.THREE;
+
+  if (!THREE) {
+    document.getElementById("error").style.display = "block";
+    document.getElementById("error").textContent =
+      "Three.js 沒有載入成功。請確認網頁可以連線到 aframe.io。";
+    return;
+  }
+
+  const canvas = document.getElementById("viewer");
+  const statusEl = document.getElementById("status");
+  const sceneName = document.getElementById("sceneName");
+  const entranceBtn = document.getElementById("entranceBtn");
+  const harbourBtn = document.getElementById("harbourBtn");
+  const enterBtn = document.getElementById("enter");
+  const start = document.getElementById("start");
+  const errorBox = document.getElementById("error");
 
   const FILES = {
     entrance: "awoo-halloween-town-01-entrance.png",
     harbour: "awoo-halloween-town-02-pumpkin-harbour.png"
   };
 
-  const start = document.getElementById("start");
-  const enter = document.getElementById("enter");
-  const sphere = document.getElementById("panoSphere");
-  const scene = document.getElementById("scene");
-  const entranceBtn = document.getElementById("entranceBtn");
-  const harbourBtn = document.getElementById("harbourBtn");
-  const sceneName = document.getElementById("sceneName");
-  const status = document.getElementById("status");
-  const debug = document.getElementById("debug");
+  // ---------- THREE 基礎 ----------
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    alpha: false
+  });
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+  const scene = new THREE.Scene();
+
+  const camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1100
+  );
+
+  camera.position.set(0,0,0.01);
+  camera.rotation.order = "YXZ";
+
+  // 球體內側顯示全景
+  const geometry = new THREE.SphereGeometry(100, 64, 40);
+  geometry.scale(-1,1,1);
+
+  const material = new THREE.MeshBasicMaterial({color:0xffffff});
+  const sphere = new THREE.Mesh(geometry, material);
+  scene.add(sphere);
 
   let textures = {};
-  let ready = false;
+  let currentScene = "entrance";
 
-  function setStatus(text){ status.textContent = text; }
+  // ---------- 視角狀態 ----------
+  let yaw = 0;
+  let pitch = 0;
 
-  function loadTexture(url){
-    return new Promise(function(resolve,reject){
-      const loader = new THREE.TextureLoader();
-      loader.load(
-        url + "?v=6",
-        function(tex){
-          tex.colorSpace = THREE.SRGBColorSpace || tex.colorSpace;
-          tex.wrapS = THREE.ClampToEdgeWrapping;
-          tex.wrapT = THREE.ClampToEdgeWrapping;
+  let dragging = false;
+  let lastX = 0;
+  let lastY = 0;
+
+  // 手機感應角度偏移
+  let sensorEnabled = false;
+  let sensorHasData = false;
+  let sensorYaw = 0;
+  let sensorPitch = 0;
+  let sensorStartYaw = null;
+  let sensorStartPitch = null;
+
+  function clamp(v,min,max){
+    return Math.max(min,Math.min(max,v));
+  }
+
+  function applyCamera(){
+    let finalYaw = yaw;
+    let finalPitch = pitch;
+
+    if (sensorEnabled && sensorHasData) {
+      finalYaw += sensorYaw;
+      finalPitch += sensorPitch;
+    }
+
+    finalPitch = clamp(finalPitch, -Math.PI/2 + 0.05, Math.PI/2 - 0.05);
+
+    camera.rotation.x = finalPitch;
+    camera.rotation.y = finalYaw;
+    camera.rotation.z = 0;
+  }
+
+  // ---------- 手指 / 滑鼠拖曳 ----------
+  function pointerDown(e){
+    // 場景切換按鈕不進入拖曳
+    if (e.target.closest && e.target.closest(".btn")) return;
+
+    dragging = true;
+    lastX = e.clientX;
+    lastY = e.clientY;
+
+    try { canvas.setPointerCapture(e.pointerId); } catch(_){}
+  }
+
+  function pointerMove(e){
+    if (!dragging) return;
+
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
+
+    lastX = e.clientX;
+    lastY = e.clientY;
+
+    const sensitivity = 0.0042;
+
+    yaw -= dx * sensitivity;
+    pitch -= dy * sensitivity;
+    pitch = clamp(pitch, -1.45, 1.45);
+
+    applyCamera();
+
+    if (!sensorHasData) {
+      statusEl.textContent = "✅ 拖曳控制正常";
+    }
+  }
+
+  function pointerUp(e){
+    dragging = false;
+    try { canvas.releasePointerCapture(e.pointerId); } catch(_){}
+  }
+
+  canvas.addEventListener("pointerdown", pointerDown, {passive:false});
+  canvas.addEventListener("pointermove", pointerMove, {passive:false});
+  canvas.addEventListener("pointerup", pointerUp, {passive:false});
+  canvas.addEventListener("pointercancel", pointerUp, {passive:false});
+
+  // 防止 Safari 將拖曳當捲動
+  canvas.addEventListener("touchstart", e => e.preventDefault(), {passive:false});
+  canvas.addEventListener("touchmove", e => e.preventDefault(), {passive:false});
+
+  // ---------- 手機方向感應 ----------
+  function degToRad(d){ return d * Math.PI / 180; }
+
+  function orientationHandler(e){
+    if (e.alpha == null || e.beta == null || e.gamma == null) return;
+
+    /*
+      這裡不追求真實世界羅盤方位，只把感應值轉成「相對於
+      開始拿手機時」的視角變化，所以比較適合遊戲環景。
+    */
+    const alpha = degToRad(e.alpha);
+    const beta = degToRad(e.beta);
+
+    if (sensorStartYaw === null) {
+      sensorStartYaw = alpha;
+      sensorStartPitch = beta;
+    }
+
+    let dyaw = alpha - sensorStartYaw;
+
+    // 處理 0° / 360° 穿越
+    if (dyaw > Math.PI) dyaw -= Math.PI * 2;
+    if (dyaw < -Math.PI) dyaw += Math.PI * 2;
+
+    sensorYaw = -dyaw;
+    sensorPitch = clamp(beta - sensorStartPitch, -1.25, 1.25);
+
+    sensorHasData = true;
+    applyCamera();
+
+    statusEl.textContent = "✅ 手機方向感應正常";
+  }
+
+  function enableSensor(){
+    if (sensorEnabled) return;
+    sensorEnabled = true;
+    window.addEventListener("deviceorientation", orientationHandler, true);
+  }
+
+  async function askSensorPermission(){
+    try {
+      if (
+        typeof DeviceOrientationEvent !== "undefined" &&
+        typeof DeviceOrientationEvent.requestPermission === "function"
+      ) {
+        const result = await DeviceOrientationEvent.requestPermission();
+
+        if (result === "granted") {
+          enableSensor();
+        } else {
+          statusEl.textContent = "方向感應未允許，但仍可手指拖曳";
+        }
+      } else if ("DeviceOrientationEvent" in window) {
+        enableSensor();
+      } else {
+        statusEl.textContent = "此裝置無方向感應，可使用手指拖曳";
+      }
+    } catch(err) {
+      console.warn(err);
+      statusEl.textContent = "方向感應不可用，但仍可手指拖曳";
+    }
+  }
+
+  // ---------- 圖片載入 / 場景切換 ----------
+  function loadTexture(path){
+    return new Promise((resolve,reject)=>{
+      new THREE.TextureLoader().load(
+        path + "?v=9",
+        tex => {
+          if ("colorSpace" in tex && THREE.SRGBColorSpace) {
+            tex.colorSpace = THREE.SRGBColorSpace;
+          }
           tex.needsUpdate = true;
           resolve(tex);
         },
@@ -114,99 +416,102 @@
     });
   }
 
-  function applyTexture(tex){
-    const mesh = sphere.getObject3D("mesh");
-    if (!mesh || !mesh.material) throw new Error("360 sphere mesh not ready");
+  async function loadScenes(){
+    statusEl.textContent = "正在載入 360° 場景…";
 
-    mesh.material.map = tex;
-    mesh.material.color.set(0xffffff);
-    mesh.material.needsUpdate = true;
-    mesh.visible = true;
-  }
-
-  async function prepare(){
-    if (ready) return;
-    setStatus("正在載入入口與南瓜港…");
-
-    try{
-      const results = await Promise.all([
+    try {
+      const [entrance, harbour] = await Promise.all([
         loadTexture(FILES.entrance),
         loadTexture(FILES.harbour)
       ]);
 
-      textures.entrance = results[0];
-      textures.harbour = results[1];
+      textures.entrance = entrance;
+      textures.harbour = harbour;
 
-      applyTexture(textures.entrance);
-      ready = true;
-      setStatus("拖曳畫面或轉動手機探索");
-    }catch(err){
+      material.map = textures.entrance;
+      material.needsUpdate = true;
+
+      statusEl.textContent = "👆 手指拖曳畫面試試看";
+    } catch(err) {
       console.error(err);
-      alert(
-        "360° 圖片載入失敗。請確認這兩個檔案與 index.html 在同一層：\\n\\n" +
-        FILES.entrance + "\\n" + FILES.harbour
-      );
-      setStatus("圖片載入失敗");
+
+      errorBox.style.display = "block";
+      errorBox.innerHTML =
+        "找不到 360° 圖片。請確認 <b>index.html</b> 和以下兩張圖放在同一層：<br><br>" +
+        FILES.entrance + "<br>" +
+        FILES.harbour;
     }
   }
 
-  function switchScene(which){
-    if (!ready || !textures[which]){
-      setStatus("場景還在載入");
+  function changeScene(which){
+    if (!textures[which]) {
+      statusEl.textContent = "場景仍在載入";
       return;
     }
 
-    try{
-      applyTexture(textures[which]);
+    currentScene = which;
 
-      const isEntrance = which === "entrance";
-      entranceBtn.classList.toggle("active", isEntrance);
-      harbourBtn.classList.toggle("active", !isEntrance);
-      sceneName.textContent = isEntrance ? "🏠 入口廣場" : "🎃 南瓜港";
-      setStatus(isEntrance ? "已切換：入口廣場" : "已切換：南瓜港");
+    material.map = textures[which];
+    material.needsUpdate = true;
 
-      // 強制要求 Three.js 重畫一幀
-      if (scene.renderer && scene.object3D && scene.camera) {
-        scene.renderer.render(scene.object3D, scene.camera);
-      }
+    const entrance = which === "entrance";
 
-      setTimeout(function(){
-        setStatus("拖曳畫面或轉動手機探索");
-      }, 1200);
+    entranceBtn.classList.toggle("active", entrance);
+    harbourBtn.classList.toggle("active", !entrance);
 
-    }catch(err){
-      console.error(err);
-      debug.style.display = "block";
-      debug.textContent = "切換失敗：" + err.message;
-      setStatus("場景切換失敗");
-    }
+    sceneName.textContent = entrance ? "🏠 入口廣場" : "🎃 南瓜港";
+    statusEl.textContent = entrance ? "已切換：入口廣場" : "已切換：南瓜港";
   }
 
-  entranceBtn.addEventListener("click", function(e){
-    e.preventDefault();
-    switchScene("entrance");
+  entranceBtn.addEventListener("click", e=>{
+    e.stopPropagation();
+    changeScene("entrance");
   });
 
-  harbourBtn.addEventListener("click", function(e){
-    e.preventDefault();
-    switchScene("harbour");
+  harbourBtn.addEventListener("click", e=>{
+    e.stopPropagation();
+    changeScene("harbour");
   });
 
-  enter.addEventListener("click", async function(){
-    try{
-      if (typeof DeviceOrientationEvent !== "undefined" &&
-          typeof DeviceOrientationEvent.requestPermission === "function"){
-        await DeviceOrientationEvent.requestPermission();
-      }
-    }catch(e){}
+  // ---------- 開始 ----------
+  enterBtn.addEventListener("click", async ()=>{
+    await askSensorPermission();
     start.style.display = "none";
+
+    // 給感應一點時間，如果沒有資料，明確告訴使用者先拖曳
+    setTimeout(()=>{
+      if (!sensorHasData) {
+        statusEl.textContent = "👆 先用手指拖曳；若手機感應可用會自動啟用";
+      }
+    },1200);
   });
 
-  if (scene.hasLoaded) {
-    prepare();
-  } else {
-    scene.addEventListener("loaded", prepare, {once:true});
+  // ---------- resize / render ----------
+  function resize(){
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    renderer.setSize(w,h,false);
+    camera.aspect = w/h;
+    camera.updateProjectionMatrix();
   }
+
+  window.addEventListener("resize",resize);
+  window.addEventListener("orientationchange",()=>{
+    setTimeout(resize,200);
+  });
+
+  resize();
+
+  function animate(){
+    requestAnimationFrame(animate);
+    applyCamera();
+    renderer.render(scene,camera);
+  }
+
+  animate();
+  loadScenes();
+
 })();
 </script>
 </body>
