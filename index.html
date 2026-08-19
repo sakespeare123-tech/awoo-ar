@@ -21,11 +21,9 @@ button{font:inherit}
   position:fixed;inset:0;z-index:1;overflow:hidden;background:#081020;touch-action:none
 }
 #panoA,#panoB{
-  position:absolute;top:0;left:0;height:100%;width:auto;max-width:none;user-select:none;-webkit-user-drag:none;
-  will-change:transform,opacity;pointer-events:none;opacity:0;
-  transition:opacity .32s ease;
+  position:absolute;top:0;height:100%;width:auto;max-width:none;user-select:none;-webkit-user-drag:none;
+  will-change:transform;pointer-events:none
 }
-#panoA.active,#panoB.active{opacity:1}
 #shade{
   position:fixed;inset:0;z-index:2;pointer-events:none;
   background:linear-gradient(180deg,rgba(0,0,0,.16),transparent 25%,transparent 68%,rgba(0,0,0,.35))
@@ -35,7 +33,7 @@ button{font:inherit}
 #intro{
   position:fixed;inset:0;z-index:5000;display:grid;place-items:center;background:linear-gradient(180deg,#081d43,#02050d)
 }
-#intro img{width:min(64vw,360px);filter:drop-shadow(0 20px 28px rgba(0,0,0,.38));animation:dogIntro 1.5s ease both;background:transparent}
+#intro img{width:min(64vw,360px);filter:drop-shadow(0 20px 28px rgba(0,0,0,.38));animation:dogIntro 1.5s ease both}
 @keyframes dogIntro{
   0%{opacity:0;transform:translateY(18px) scale(.92)}
   18%{opacity:1;transform:translateY(0) scale(1)}
@@ -221,7 +219,7 @@ button{font:inherit}
 (() => {
 "use strict";
 
-const VERSION="20260819-360-SMOOTH";
+const VERSION="20260819-1305";
 const SCENES=[
  {id:"entrance",name:"入口廣場",icon:"🏠",file:"awoo-halloween-town-01-entrance.png"},
  {id:"harbour",name:"南瓜港",icon:"🎃",file:"awoo-halloween-town-02-pumpkin-harbour.png"},
@@ -252,15 +250,11 @@ const resultModal=$("#resultModal"),resultCanvas=$("#resultCanvas"),loader=$("#l
 let currentScene=0;
 let caught=new Set(JSON.parse(localStorage.getItem("awooCaughtGhosts")||"[]"));
 let panoImg=null;
-let pan=0; // 0..1, 代表完整一圈
+let pan=0; // 0..1
 let dragging=false,lastX=0;
 let sensorBase=null,sensorOffset=0,sensorEnabled=false;
 let petImage=null,soundOn=true;
-let activePano=panoA;
-let standbyPano=panoB;
-let sceneChanging=false;
-const sceneCache=new Map();
-let rafPending=false;
+const imageCache=new Map();
 
 function url(f){return "./"+f+"?v="+VERSION}
 function wrap01(v){v%=1;if(v<0)v+=1;return v}
@@ -269,119 +263,71 @@ function openM(m){m.classList.add("show")} function closeM(m){m.classList.remove
 $$("[data-close]").forEach(b=>b.onclick=()=>closeM(document.getElementById(b.dataset.close)));
 
 function loadImg(src){
- if(sceneCache.has(src)) return Promise.resolve(sceneCache.get(src));
+ if(imageCache.has(src)) return Promise.resolve(imageCache.get(src));
  return new Promise((res,rej)=>{
-   const i=new Image();
-   i.decoding="async";
-   i.onload=()=>{sceneCache.set(src,i);res(i)};
-   i.onerror=()=>rej(new Error(src));
-   i.src=url(src);
+  const i=new Image();
+  i.decoding="async";
+  i.onload=()=>{imageCache.set(src,i);res(i)};
+  i.onerror=()=>rej(new Error(src));
+  i.src=url(src);
  })
 }
-
-function preloadScenes(){
+function preloadAssets(){
  SCENES.forEach(s=>loadImg(s.file).catch(()=>{}));
  GHOSTS.forEach(g=>loadImg(g.file).catch(()=>{}));
  loadImg("awoo-halloween-npc.png").catch(()=>{});
 }
-
-async function removeWhiteBackground(imgEl){
+async function removeWhiteBackground(){
  try{
-   const source=await loadImg("awoo-halloween-npc.png");
-   const c=document.createElement("canvas");
-   c.width=source.naturalWidth;c.height=source.naturalHeight;
-   const ctx=c.getContext("2d",{willReadFrequently:true});
-   ctx.drawImage(source,0,0);
-   const im=ctx.getImageData(0,0,c.width,c.height);
-   const d=im.data;
-   for(let i=0;i<d.length;i+=4){
-     const r=d[i],g=d[i+1],b=d[i+2];
-     const mx=Math.max(r,g,b),mn=Math.min(r,g,b);
-     if(mn>242 && mx-mn<10){ d[i+3]=0; }
-     else if(mn>225 && mx-mn<16){ d[i+3]=Math.min(d[i+3],Math.round((242-mn)/17*255)); }
-   }
-   ctx.putImageData(im,0,0);
-   imgEl.src=c.toDataURL("image/png");
- }catch(_){}
+  const el=document.querySelector("#intro img");
+  const source=await loadImg("awoo-halloween-npc.png");
+  const c=document.createElement("canvas");
+  c.width=source.naturalWidth;c.height=source.naturalHeight;
+  const ctx=c.getContext("2d",{willReadFrequently:true});
+  ctx.drawImage(source,0,0);
+  const im=ctx.getImageData(0,0,c.width,c.height),d=im.data;
+  for(let i=0;i<d.length;i+=4){
+   const r=d[i],g=d[i+1],b=d[i+2],mn=Math.min(r,g,b),mx=Math.max(r,g,b);
+   if(mn>242 && mx-mn<12)d[i+3]=0;
+   else if(mn>226 && mx-mn<18)d[i+3]=Math.min(d[i+3],Math.max(0,Math.round((242-mn)/16*255)));
+  }
+  ctx.putImageData(im,0,0);
+  el.src=c.toDataURL("image/png");
+ }catch(_){ }
 }
 
 async function setScene(i){
- if(sceneChanging || i===currentScene && panoImg) return;
- sceneChanging=true;
- loader.classList.add("show");
+ const cached=imageCache.has(SCENES[i].file);
+ if(!cached) loader.classList.add("show");
  try{
    const img=await loadImg(SCENES[i].file);
    currentScene=i;panoImg=img;pan=0;
-
-   standbyPano.src=img.src;
-   standbyPano.style.opacity="0";
-   standbyPano.classList.add("active");
-   renderPanorama(standbyPano,img);
-
-   requestAnimationFrame(()=>{
-     activePano.classList.remove("active");
-     standbyPano.style.opacity="1";
-   });
-
-   const old=activePano;
-   activePano=standbyPano;
-   standbyPano=old;
-
-   setTimeout(()=>{
-     standbyPano.style.opacity="0";
-     standbyPano.classList.remove("active");
-   },360);
-
+   panoA.src=img.src;panoB.src=img.src;
    sceneLabel.textContent=`📍 ${SCENES[i].name}`;
    photoSceneName.textContent=`📍 ${SCENES[i].name}`;
    $$(".sceneChip").forEach((b,j)=>b.classList.toggle("active",j===i));
+   renderPanorama();
    updateGhost();
- }catch(e){
-   alert("找不到場景圖片："+SCENES[i].file);
- }finally{
-   loader.classList.remove("show");
-   sceneChanging=false;
- }
+ }catch(e){alert("找不到場景圖片："+SCENES[i].file)}
+ finally{loader.classList.remove("show")}
 }
 
-function getPanoMetrics(img=panoImg){
- if(!img)return null;
+function renderPanorama(){
+ if(!panoImg)return;
  const H=innerHeight;
- // 至少讓單張環景寬度大於螢幕，避免循環時露底
- const byHeight=img.naturalWidth*(H/img.naturalHeight);
- const W=Math.max(byHeight,innerWidth*1.35);
- return {H,W};
-}
+ const W=panoImg.naturalWidth*(H/panoImg.naturalHeight);
+ if(!W)return;
+ const x=-(pan*W);
+ panoA.style.width=W+"px";panoB.style.width=W+"px";
+ panoA.style.height=H+"px";panoB.style.height=H+"px";
+ panoA.style.transform=`translate3d(${x}px,0,0)`;
+ panoB.style.transform=`translate3d(${x+W}px,0,0)`;
 
-function renderPanorama(target=activePano,img=panoImg){
- if(!img||!target)return;
- const m=getPanoMetrics(img);if(!m)return;
- const {H,W}=m;
- const base=-(wrap01(pan)*W);
-
- target.style.width=W+"px";
- target.style.height=H+"px";
-
- // 用單張圖配合 CSS transform；超出右側時額外利用另一張圖補縫
- target.style.transform=`translate3d(${base}px,0,0)`;
-
- // standby 在正常顯示時作為第二份循環副本
- if(target===activePano && !sceneChanging){
-   standbyPano.src=target.src;
-   standbyPano.style.width=W+"px";
-   standbyPano.style.height=H+"px";
-   standbyPano.style.transition="none";
-   standbyPano.style.opacity="1";
-   standbyPano.style.transform=`translate3d(${base+W}px,0,0)`;
-   requestAnimationFrame(()=>standbyPano.style.transition="opacity .32s ease");
+ // if first image entirely left, show an extra copy by moving A after B
+ if(x+W<innerWidth){
+   panoA.style.transform=`translate3d(${x+W*2}px,0,0)`;
  }
  updateGhost();
-}
-
-function scheduleRender(){
- if(rafPending)return;
- rafPending=true;
- requestAnimationFrame(()=>{rafPending=false;renderPanorama()});
 }
 
 function buildNav(){
@@ -392,12 +338,11 @@ function buildNav(){
  });
 }
 
-viewer.addEventListener("pointerdown",e=>{dragging=true;lastX=e.clientX});
+viewer.addEventListener("pointerdown",e=>{dragging=true;lastX=e.clientX;try{viewer.setPointerCapture(e.pointerId)}catch(_){}});
 viewer.addEventListener("pointermove",e=>{
  if(!dragging||!panoImg)return;
- const m=getPanoMetrics();if(!m)return;
- const dx=e.clientX-lastX;lastX=e.clientX;
- pan=wrap01(pan-dx/m.W);scheduleRender()
+ const H=innerHeight,W=panoImg.naturalWidth*(H/panoImg.naturalHeight);
+ const dx=e.clientX-lastX;lastX=e.clientX;pan=wrap01(pan-dx/W);renderPanorama()
 });
 addEventListener("pointerup",()=>dragging=false);addEventListener("pointercancel",()=>dragging=false);
 
@@ -425,8 +370,8 @@ function updateGhost(){
  const g=currentGhost();
  if(!g||caught.has(g.id)||!panoImg){ghostHotspot.style.display="none";return}
  let d=g.yaw-pan;while(d>.5)d-=1;while(d<-.5)d+=1;
- const m=getPanoMetrics();if(!m){ghostHotspot.style.display="none";return}
- const visibleFrac=innerWidth/m.W;
+ const H=innerHeight,W=panoImg.naturalWidth*(H/panoImg.naturalHeight);
+ const visibleFrac=innerWidth/W;
  if(Math.abs(d)>visibleFrac*.52){ghostHotspot.style.display="none";return}
  ghostHotspot.style.left=(50+(d/visibleFrac)*100)+"%";
  ghostHotspot.style.top="52%";
@@ -516,12 +461,12 @@ $("#enterTown").onclick=async()=>{
  try{bgm.volume=.45;await bgm.play()}catch(_){soundOn=false;$("#soundBtn").textContent="🔇"}
 };
 
-addEventListener("resize",scheduleRender);
+addEventListener("resize",renderPanorama);
 
 async function start(){
+ preloadAssets();
  buildNav();renderAlbum();updateProgress();
- preloadScenes();
- await removeWhiteBackground($("#intro img"));
+ await removeWhiteBackground();
  await setScene(0);
  setTimeout(()=>{
    intro.style.opacity="0";intro.style.transition="opacity .35s";
