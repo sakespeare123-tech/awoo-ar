@@ -4,153 +4,68 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#06132f">
-<title>aWoo 萬聖小鎮</title>
-<!-- aWoo Halloween build: 20260817-0221 DOM-PANORAMA-NO-WEBGL -->
-
+<title>aWoo 萬聖小鎮 360°</title>
 <style>
-:root{
-  --navy:#06132f;--yellow:#ffd447;--orange:#ff9e20;--panel:rgba(5,12,32,.86);
-}
+:root{--navy:#06132f;--yellow:#ffd447;--orange:#ff9e20;--panel:rgba(5,12,32,.86)}
 *{box-sizing:border-box}
 html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#02050d;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif}
 body{touch-action:none;overscroll-behavior:none}
 button{font:inherit}
-
-/* panorama */
-#viewer{
-  position:fixed;inset:0;z-index:1;overflow:hidden;background:#081020;touch-action:none
-}
-#panoA,#panoB{
-  position:absolute;top:0;height:100%;width:auto;max-width:none;user-select:none;-webkit-user-drag:none;
-  will-change:transform;pointer-events:none
-}
-#shade{
-  position:fixed;inset:0;z-index:2;pointer-events:none;
-  background:linear-gradient(180deg,rgba(0,0,0,.16),transparent 25%,transparent 68%,rgba(0,0,0,.35))
-}
-
-/* intro */
-#intro{
-  position:fixed;inset:0;z-index:5000;display:grid;place-items:center;background:linear-gradient(180deg,#081d43,#02050d)
-}
-#intro img{width:min(64vw,360px);filter:drop-shadow(0 20px 28px rgba(0,0,0,.38));animation:dogIntro 1.5s ease both}
-@keyframes dogIntro{
-  0%{opacity:0;transform:translateY(18px) scale(.92)}
-  18%{opacity:1;transform:translateY(0) scale(1)}
-  35%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}
-  65%{transform:rotate(-3deg)}80%{transform:rotate(3deg)}
-  100%{transform:rotate(0)}
-}
+#viewer{position:fixed;inset:0;z-index:1;background:#081020;touch-action:none}
+#gl{width:100%;height:100%;display:block}
+#shade{position:fixed;inset:0;z-index:2;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.14),transparent 25%,transparent 68%,rgba(0,0,0,.34))}
+#intro{position:fixed;inset:0;z-index:5000;display:grid;place-items:center;background:linear-gradient(180deg,#081d43,#02050d)}
+#intro img{width:min(64vw,360px);object-fit:contain;filter:drop-shadow(0 20px 28px rgba(0,0,0,.38));animation:dogIntro 1.5s ease both}
+@keyframes dogIntro{0%{opacity:0;transform:translateY(18px) scale(.92)}18%{opacity:1;transform:translateY(0) scale(1)}35%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}65%{transform:rotate(-3deg)}80%{transform:rotate(3deg)}100%{transform:rotate(0)}}
 #introText{position:absolute;bottom:40px;font-weight:800;letter-spacing:1px;opacity:.8}
-
-/* welcome */
-#welcome{
-  position:fixed;inset:0;z-index:4500;display:none;place-items:center;padding:22px;background:rgba(2,7,19,.92)
-}
-.card{
-  width:min(100%,430px);padding:26px 22px;border-radius:28px;text-align:center;background:rgba(8,18,44,.95);
-  border:1px solid rgba(255,255,255,.14);box-shadow:0 25px 70px rgba(0,0,0,.4)
-}
+#welcome{position:fixed;inset:0;z-index:4500;display:none;place-items:center;padding:22px;background:rgba(2,7,19,.92)}
+.card{width:min(100%,430px);padding:26px 22px;border-radius:28px;text-align:center;background:rgba(8,18,44,.95);border:1px solid rgba(255,255,255,.14);box-shadow:0 25px 70px rgba(0,0,0,.4)}
 .card h1{margin:8px 0;color:var(--yellow);font-size:29px}
 .card p{line-height:1.7;font-size:14px;opacity:.86}
 .primary{width:100%;height:54px;border:0;border-radius:17px;background:linear-gradient(135deg,var(--yellow),#ffad2e);color:#10214a;font-weight:900;font-size:17px}
-
-/* HUD */
 #hud{position:fixed;inset:0;z-index:100;pointer-events:none}
 .hidden{display:none!important}
-.top{
-  position:absolute;top:max(10px,env(safe-area-inset-top));left:12px;right:12px;display:flex;justify-content:space-between;gap:8px
-}
-.brand,.hudBtn,#progress,#sceneLabel,#hint,.sceneChip{
-  background:var(--panel);border:1px solid rgba(255,255,255,.14);color:#fff;box-shadow:0 8px 25px rgba(0,0,0,.25)
-}
-.brand{padding:9px 12px;border-radius:15px}
-.brand b{display:block;color:var(--yellow);font-size:15px}.brand small{font-size:10px;opacity:.65}
-.actions{display:flex;gap:7px;pointer-events:auto}
-.hudBtn{width:44px;height:44px;border-radius:14px}
+.top{position:absolute;top:max(10px,env(safe-area-inset-top));left:12px;right:12px;display:flex;justify-content:space-between;gap:8px}
+.brand,.hudBtn,#progress,#sceneLabel,#hint,.sceneChip{background:var(--panel);border:1px solid rgba(255,255,255,.14);color:#fff;box-shadow:0 8px 25px rgba(0,0,0,.25)}
+.brand{padding:9px 12px;border-radius:15px}.brand b{display:block;color:var(--yellow);font-size:15px}.brand small{font-size:10px;opacity:.65}
+.actions{display:flex;gap:7px;pointer-events:auto}.hudBtn{width:44px;height:44px;border-radius:14px}
 #progress{position:absolute;top:66px;left:50%;transform:translateX(-50%);padding:8px 13px;border-radius:999px;font-size:12px;white-space:nowrap}
 #sceneLabel{position:absolute;top:106px;left:50%;transform:translateX(-50%);padding:7px 12px;border-radius:999px;font-size:12px;white-space:nowrap}
 #hint{position:absolute;bottom:106px;left:50%;transform:translateX(-50%);padding:8px 13px;border-radius:999px;font-size:12px;white-space:nowrap;max-width:90%;overflow:hidden;text-overflow:ellipsis}
-#sceneNav{
-  position:absolute;left:0;right:0;bottom:max(14px,env(safe-area-inset-bottom));display:flex;gap:8px;overflow-x:auto;padding:0 12px 4px;pointer-events:auto;scrollbar-width:none
-}
-#sceneNav::-webkit-scrollbar{display:none}
-.sceneChip{flex:0 0 auto;height:48px;border-radius:15px;padding:0 14px;font-weight:800}
-.sceneChip.active{background:var(--yellow);color:#10214a;border-color:var(--yellow)}
-
-/* ghost */
-#ghostHotspot{
-  position:fixed;z-index:90;width:92px;height:92px;transform:translate(-50%,-50%);border:0;background:transparent;display:none;padding:0;pointer-events:auto;
-  filter:drop-shadow(0 10px 16px rgba(0,0,0,.4));animation:float 1.6s ease-in-out infinite alternate
-}
+#sceneNav{position:absolute;left:0;right:0;bottom:max(14px,env(safe-area-inset-bottom));display:flex;gap:8px;overflow-x:auto;padding:0 12px 4px;pointer-events:auto;scrollbar-width:none}
+#sceneNav::-webkit-scrollbar{display:none}.sceneChip{flex:0 0 auto;height:48px;border-radius:15px;padding:0 14px;font-weight:800}.sceneChip.active{background:var(--yellow);color:#10214a;border-color:var(--yellow)}
+#ghostHotspot{position:fixed;z-index:90;width:92px;height:92px;transform:translate(-50%,-50%);border:0;background:transparent;display:none;padding:0;pointer-events:auto;filter:drop-shadow(0 10px 16px rgba(0,0,0,.4));animation:float 1.6s ease-in-out infinite alternate}
 #ghostHotspot img{width:100%;height:100%;object-fit:contain}
 #ghostHotspot::after{content:"";position:absolute;inset:-7px;border:2px dashed var(--yellow);border-radius:50%}
 @keyframes float{to{margin-top:-8px}}
-
-/* modal */
-.modal{
-  position:fixed;inset:0;z-index:1500;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.62);backdrop-filter:blur(8px)
-}
-.modal.show{display:flex}
-.modalCard{
-  width:min(100%,450px);max-height:86vh;overflow:auto;border-radius:24px;background:#0a1838;border:1px solid rgba(255,255,255,.13);padding:20px;text-align:center
-}
-.modalCard h2{color:var(--yellow);margin:0 0 10px}
-.closeBtn{width:100%;height:48px;border:0;border-radius:15px;background:#fff;color:#10214a;font-weight:850;margin-top:12px}
-.ghostGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
-.ghostCard{padding:8px;border-radius:15px;background:rgba(255,255,255,.06);font-size:11px}
-.ghostCard img{width:100%;aspect-ratio:1;object-fit:contain;filter:grayscale(1) brightness(.3);opacity:.42}
-.ghostCard.caught img{filter:none;opacity:1}
-
-/* capture */
-#captureGhost{width:180px;height:180px;object-fit:contain}
-.captureActions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.captureActions button{height:48px;border:0;border-radius:14px;font-weight:850}
-#photoNow{background:var(--yellow);color:#10214a}
-#continueBtn{background:rgba(255,255,255,.1);color:#fff}
-
-/* photo */
+.modal{position:fixed;inset:0;z-index:1500;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.62);backdrop-filter:blur(8px)}
+.modal.show{display:flex}.modalCard{width:min(100%,450px);max-height:86vh;overflow:auto;border-radius:24px;background:#0a1838;border:1px solid rgba(255,255,255,.13);padding:20px;text-align:center}
+.modalCard h2{color:var(--yellow);margin:0 0 10px}.closeBtn{width:100%;height:48px;border:0;border-radius:15px;background:#fff;color:#10214a;font-weight:850;margin-top:12px}
+.ghostGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.ghostCard{padding:8px;border-radius:15px;background:rgba(255,255,255,.06);font-size:11px}
+.ghostCard img{width:100%;aspect-ratio:1;object-fit:contain;filter:grayscale(1) brightness(.3);opacity:.42}.ghostCard.caught img{filter:none;opacity:1}
+#captureGhost{width:180px;height:180px;object-fit:contain}.captureActions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.captureActions button{height:48px;border:0;border-radius:14px;font-weight:850}
+#photoNow{background:var(--yellow);color:#10214a}#continueBtn{background:rgba(255,255,255,.1);color:#fff}
 #photoPanel{position:fixed;inset:0;z-index:1800;display:none;background:#02050d}
 #photoPanel.show{display:block}
-#photoBg{
-  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#081020
-}
+#photoBg{position:absolute;inset:0;width:100%;height:100%;background:#081020}
 .photoTop{position:absolute;top:max(10px,env(safe-area-inset-top));left:12px;right:12px;z-index:20;display:flex;justify-content:space-between}
 .photoTop button{height:44px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:rgba(5,12,32,.86);color:#fff;padding:0 13px;font-weight:800}
-#petWrap{
-  position:absolute;z-index:8;left:50%;top:52%;transform:translate(-50%,-50%);width:min(70vw,340px);height:min(54vh,470px);
-  border:4px solid #fff;border-radius:28px;overflow:hidden;display:none;background:#111
-}
-#petPreview{width:100%;height:100%;object-fit:cover}
-.mascot{position:absolute;z-index:10;object-fit:contain;filter:drop-shadow(0 8px 14px rgba(0,0,0,.4))}
-#photoDog{left:2%;bottom:8%;width:min(34vw,180px)}
-.photoGhost{width:min(22vw,112px)}
+#petWrap{position:absolute;z-index:8;left:50%;top:52%;transform:translate(-50%,-50%);width:min(70vw,340px);height:min(54vh,470px);border:4px solid #fff;border-radius:28px;overflow:hidden;display:none;background:#111}
+#petPreview{width:100%;height:100%;object-fit:cover}.mascot{position:absolute;z-index:10;object-fit:contain;filter:drop-shadow(0 8px 14px rgba(0,0,0,.4))}
+#photoDog{left:2%;bottom:8%;width:min(34vw,180px)}.photoGhost{width:min(22vw,112px)}
 .g1{left:1%;top:17%}.g2{right:1%;top:17%}.g3{left:4%;bottom:30%}.g4{right:4%;bottom:30%}.g5{left:29%;top:8%}.g6{right:28%;bottom:8%}
 .photoBottom{position:absolute;z-index:30;left:12px;right:12px;bottom:max(16px,env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.photoBottom button{height:52px;border:0;border-radius:15px;font-weight:900}
-#pickPet{background:#fff;color:#10214a}#makeStory{background:var(--yellow);color:#10214a}
-#petInput{display:none}
-#resultCanvas{width:100%;max-height:62vh;object-fit:contain;border-radius:14px;background:#111}
-.resultBtns{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.resultBtns button{height:48px;border:0;border-radius:14px;font-weight:850}
+.photoBottom button{height:52px;border:0;border-radius:15px;font-weight:900}#pickPet{background:#fff;color:#10214a}#makeStory{background:var(--yellow);color:#10214a}#petInput{display:none}
+#resultCanvas{width:100%;max-height:62vh;object-fit:contain;border-radius:14px;background:#111}.resultBtns{display:grid;grid-template-columns:1fr 1fr;gap:9px}.resultBtns button{height:48px;border:0;border-radius:14px;font-weight:850}
 #saveResult{background:var(--yellow);color:#10214a}#shareResult{background:#fff;color:#10214a}
-
-/* loader */
 #loader{position:fixed;inset:0;z-index:6000;display:none;place-items:center;background:#02050d}
 #loader.show{display:grid}
 #toast{position:fixed;z-index:7000;left:50%;top:50%;transform:translate(-50%,-50%);background:#07152f;border:1px solid rgba(255,255,255,.16);padding:14px 18px;border-radius:16px;font-weight:800;opacity:0;pointer-events:none;transition:.2s;text-align:center}
 #toast.show{opacity:1}
 </style>
 </head>
-
 <body>
-
-<div id="viewer">
-  <img id="panoA" alt="">
-  <img id="panoB" alt="">
-</div>
-<div id="shade"></div>
-
+<div id="viewer"><canvas id="gl"></canvas></div><div id="shade"></div>
 <audio id="bgm" src="./awoo-halloween-bgm.mp3" loop preload="none"></audio>
 
 <section id="intro">
@@ -158,27 +73,21 @@ button{font:inherit}
   <div id="introText">aWoo Halloween Adventure</div>
 </section>
 
-<section id="welcome">
-  <div class="card">
-    <div style="font-size:46px">🎃</div>
-    <h1>aWoo 萬聖小鎮</h1>
-    <p>拖曳畫面或轉動手機探索 7 個區域，<br>找回藏在小鎮裡的 6 隻萌鬼。<br>集滿後解鎖「萌鬼軍團大合照」！</p>
-    <button id="enterTown" class="primary">進入萬聖小鎮</button>
-  </div>
-</section>
+<section id="welcome"><div class="card">
+  <div style="font-size:46px">🎃</div>
+  <h1>aWoo 萬聖小鎮</h1>
+  <p>拖曳畫面或轉動手機探索真正的 360° 場景，<br>找回藏在小鎮裡的 6 隻萌鬼。<br>集滿後解鎖「萌鬼軍團大合照」！</p>
+  <button id="enterTown" class="primary">進入萬聖小鎮</button>
+</div></section>
 
 <div id="hud" class="hidden">
   <div class="top">
     <div class="brand"><b>aWoo 萬聖小鎮</b><small>Always be here</small></div>
-    <div class="actions">
-      <button id="albumBtn" class="hudBtn">👻</button>
-      <button id="photoBtn" class="hudBtn">📸</button>
-      <button id="soundBtn" class="hudBtn">🔊</button>
-    </div>
+    <div class="actions"><button id="albumBtn" class="hudBtn">👻</button><button id="photoBtn" class="hudBtn">📸</button><button id="soundBtn" class="hudBtn">🔊</button></div>
   </div>
   <div id="progress">萌鬼圖鑑　0 / 6</div>
   <div id="sceneLabel">📍 入口廣場</div>
-  <div id="hint">👆 左右拖曳畫面探索</div>
+  <div id="hint">👆 上下左右拖曳探索 360°</div>
   <div id="sceneNav"></div>
 </div>
 
@@ -212,169 +121,173 @@ button{font:inherit}
   <button class="closeBtn" data-close="resultModal">返回</button>
 </div></div>
 
-<div id="loader">載入場景中…</div>
+<div id="loader">載入 360° 場景中…</div>
 <div id="toast"></div>
 
 <script>
-(() => {
+(()=>{
 "use strict";
 
-const VERSION="20260819-1305";
+const VERSION="20260819-TRUE360-01";
 const SCENES=[
- {id:"entrance",name:"入口廣場",icon:"🏠",file:"awoo-halloween-town-01-entrance.png"},
- {id:"harbour",name:"南瓜港",icon:"🎃",file:"awoo-halloween-town-02-pumpkin-harbour.png"},
- {id:"witch",name:"魔女雜貨店",icon:"🧙",file:"awoo-halloween-town-03-witch-shop.png"},
- {id:"graveyard",name:"墓園",icon:"🪦",file:"awoo-halloween-town-04-graveyard.png"},
- {id:"station",name:"廢棄車站",icon:"🚂",file:"awoo-halloween-town-05-abandoned-station.png"},
- {id:"candy",name:"糖果屋",icon:"🍭",file:"awoo-halloween-town-06-candy-house.png"},
- {id:"plaza",name:"萌鬼廣場",icon:"👻",file:"awoo-halloween-town-07-ghost-plaza.png"}
+ {id:"entrance",name:"入口廣場",icon:"🏠",file:"awoo-halloween-town-01-entrance.webp"},
+ {id:"harbour",name:"南瓜港",icon:"🎃",file:"awoo-halloween-town-02-pumpkin-harbour.webp"},
+ {id:"witch",name:"魔女雜貨店",icon:"🧙",file:"awoo-halloween-town-03-witch-shop.webp"},
+ {id:"graveyard",name:"墓園",icon:"🪦",file:"awoo-halloween-town-04-graveyard.webp"},
+ {id:"station",name:"廢棄車站",icon:"🚂",file:"awoo-halloween-town-05-abandoned-station.webp"},
+ {id:"candy",name:"糖果屋",icon:"🍭",file:"awoo-halloween-town-06-candy-house.webp"},
+ {id:"plaza",name:"萌鬼廣場",icon:"👻",file:"awoo-halloween-town-07-ghost-plaza.webp"}
 ];
 const GHOSTS=[
- {id:"pumpkin",name:"南瓜怪",file:"awoo-ghost-01-pumpkin.png",scene:"harbour",yaw:.12},
- {id:"batmouse",name:"蝙蝠老鼠",file:"awoo-ghost-02-batmouse.png",scene:"witch",yaw:.62},
- {id:"mummy",name:"木乃伊兔",file:"awoo-ghost-03-mummy-bunny.png",scene:"graveyard",yaw:.33},
- {id:"cat",name:"魔女黑貓",file:"awoo-ghost-04-witch-cat.png",scene:"station",yaw:.78},
- {id:"werewolf",name:"小狼人",file:"awoo-ghost-05-werewolf.png",scene:"candy",yaw:.47},
- {id:"candyghost",name:"糖果幽靈",file:"awoo-ghost-06-candy-ghost.png",scene:"plaza",yaw:.88}
+ {id:"pumpkin",name:"南瓜怪",file:"awoo-ghost-01-pumpkin.png",scene:"harbour",yaw:.12,pitch:0},
+ {id:"batmouse",name:"蝙蝠老鼠",file:"awoo-ghost-02-batmouse.png",scene:"witch",yaw:.62,pitch:0},
+ {id:"mummy",name:"木乃伊兔",file:"awoo-ghost-03-mummy-bunny.png",scene:"graveyard",yaw:.33,pitch:0},
+ {id:"cat",name:"魔女黑貓",file:"awoo-ghost-04-witch-cat.png",scene:"station",yaw:.78,pitch:0},
+ {id:"werewolf",name:"小狼人",file:"awoo-ghost-05-werewolf.png",scene:"candy",yaw:.47,pitch:0},
+ {id:"candyghost",name:"糖果幽靈",file:"awoo-ghost-06-candy-ghost.png",scene:"plaza",yaw:.88,pitch:0}
 ];
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const viewer=$("#viewer"),panoA=$("#panoA"),panoB=$("#panoB"),hud=$("#hud"),intro=$("#intro"),welcome=$("#welcome");
-const sceneNav=$("#sceneNav"),sceneLabel=$("#sceneLabel"),progress=$("#progress"),hint=$("#hint");
-const ghostHotspot=$("#ghostHotspot"),hotspotImg=$("#hotspotImg"),albumModal=$("#albumModal"),ghostGrid=$("#ghostGrid");
-const captureModal=$("#captureModal"),captureGhost=$("#captureGhost"),captureName=$("#captureName");
-const photoPanel=$("#photoPanel"),photoBg=$("#photoBg"),photoSceneName=$("#photoSceneName");
-const petWrap=$("#petWrap"),petPreview=$("#petPreview"),petInput=$("#petInput");
-const resultModal=$("#resultModal"),resultCanvas=$("#resultCanvas"),loader=$("#loader"),toast=$("#toast"),bgm=$("#bgm");
+const canvas=$("#gl"), viewer=$("#viewer"), hud=$("#hud"), intro=$("#intro"), welcome=$("#welcome");
+const sceneNav=$("#sceneNav"), sceneLabel=$("#sceneLabel"), progress=$("#progress"), hint=$("#hint");
+const ghostHotspot=$("#ghostHotspot"), hotspotImg=$("#hotspotImg"), albumModal=$("#albumModal"), ghostGrid=$("#ghostGrid");
+const captureModal=$("#captureModal"), captureGhost=$("#captureGhost"), captureName=$("#captureName");
+const photoPanel=$("#photoPanel"), photoBg=$("#photoBg"), photoSceneName=$("#photoSceneName");
+const petWrap=$("#petWrap"), petPreview=$("#petPreview"), petInput=$("#petInput");
+const resultModal=$("#resultModal"), resultCanvas=$("#resultCanvas"), loader=$("#loader"), toast=$("#toast"), bgm=$("#bgm");
 
 let currentScene=0;
 let caught=new Set(JSON.parse(localStorage.getItem("awooCaughtGhosts")||"[]"));
-let panoImg=null;
-let pan=0; // 0..1
-let dragging=false,lastX=0;
-let sensorBase=null,sensorOffset=0,sensorEnabled=false;
+let yaw=0, pitch=0, fov=Math.PI/2.15;
+let dragging=false,lastX=0,lastY=0;
+let sensorEnabled=false,sensorBaseAlpha=null,sensorBaseBeta=null;
 let petImage=null,soundOn=true;
+let currentImage=null;
 const imageCache=new Map();
 
 function url(f){return "./"+f+"?v="+VERSION}
-function wrap01(v){v%=1;if(v<0)v+=1;return v}
 function showToast(t){toast.textContent=t;toast.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>toast.classList.remove("show"),1600)}
 function openM(m){m.classList.add("show")} function closeM(m){m.classList.remove("show")}
 $$("[data-close]").forEach(b=>b.onclick=()=>closeM(document.getElementById(b.dataset.close)));
 
 function loadImg(src){
- if(imageCache.has(src)) return Promise.resolve(imageCache.get(src));
- return new Promise((res,rej)=>{
-  const i=new Image();
-  i.decoding="async";
-  i.onload=()=>{imageCache.set(src,i);res(i)};
-  i.onerror=()=>rej(new Error(src));
-  i.src=url(src);
- })
+ if(imageCache.has(src)) return imageCache.get(src);
+ const p=new Promise((res,rej)=>{
+   const i=new Image(); i.decoding="async";
+   i.onload=()=>res(i); i.onerror=()=>rej(new Error(src)); i.src=url(src);
+ });
+ imageCache.set(src,p); return p;
 }
-function preloadAssets(){
- SCENES.forEach(s=>loadImg(s.file).catch(()=>{}));
- GHOSTS.forEach(g=>loadImg(g.file).catch(()=>{}));
- loadImg("awoo-halloween-npc.png").catch(()=>{});
-}
-async function removeWhiteBackground(){
- try{
-  const el=document.querySelector("#intro img");
-  const source=await loadImg("awoo-halloween-npc.png");
-  const c=document.createElement("canvas");
-  c.width=source.naturalWidth;c.height=source.naturalHeight;
-  const ctx=c.getContext("2d",{willReadFrequently:true});
-  ctx.drawImage(source,0,0);
-  const im=ctx.getImageData(0,0,c.width,c.height),d=im.data;
-  for(let i=0;i<d.length;i+=4){
-   const r=d[i],g=d[i+1],b=d[i+2],mn=Math.min(r,g,b),mx=Math.max(r,g,b);
-   if(mn>242 && mx-mn<12)d[i+3]=0;
-   else if(mn>226 && mx-mn<18)d[i+3]=Math.min(d[i+3],Math.max(0,Math.round((242-mn)/16*255)));
-  }
-  ctx.putImageData(im,0,0);
-  el.src=c.toDataURL("image/png");
- }catch(_){ }
-}
+function preloadAll(){SCENES.forEach(s=>loadImg(s.file).catch(()=>{}));GHOSTS.forEach(g=>loadImg(g.file).catch(()=>{}));}
 
+/* -------- TRUE 360° WEBGL VIEWER: no Three.js, no A-Frame -------- */
+const gl=canvas.getContext("webgl",{alpha:false,antialias:false,preserveDrawingBuffer:true});
+if(!gl){alert("此裝置不支援 WebGL，無法使用真正 360° 模式。");return;}
+
+const vs=`attribute vec2 p; varying vec2 v; void main(){v=p;gl_Position=vec4(p,0.,1.);}`;
+const fs=`precision highp float;
+varying vec2 v;
+uniform sampler2D tex;
+uniform float yaw;
+uniform float pitch;
+uniform float aspect;
+uniform float tanHalfFov;
+const float PI=3.141592653589793;
+void main(){
+  vec3 dir=normalize(vec3(v.x*aspect*tanHalfFov, v.y*tanHalfFov, -1.0));
+  float cp=cos(pitch), sp=sin(pitch);
+  dir=vec3(dir.x, cp*dir.y-sp*dir.z, sp*dir.y+cp*dir.z);
+  float cy=cos(yaw), sy=sin(yaw);
+  dir=vec3(cy*dir.x+sy*dir.z, dir.y, -sy*dir.x+cy*dir.z);
+  float lon=atan(dir.x,-dir.z);
+  float lat=asin(clamp(dir.y,-1.0,1.0));
+  vec2 uv=vec2(fract(lon/(2.0*PI)+0.5), clamp(0.5-lat/PI,0.001,0.999));
+  gl_FragColor=texture2D(tex,uv);
+}`;
+function shader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s}
+const prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vs));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);
+const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+gl.useProgram(prog);
+const pLoc=gl.getAttribLocation(prog,"p");gl.enableVertexAttribArray(pLoc);gl.vertexAttribPointer(pLoc,2,gl.FLOAT,false,0,0);
+const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+const uYaw=gl.getUniformLocation(prog,"yaw"),uPitch=gl.getUniformLocation(prog,"pitch"),uAspect=gl.getUniformLocation(prog,"aspect"),uFov=gl.getUniformLocation(prog,"tanHalfFov");
+
+function uploadTexture(img){
+ currentImage=img;gl.bindTexture(gl.TEXTURE_2D,tex);
+ gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
+ render360();
+}
+function resizeGL(){
+ const d=Math.min(devicePixelRatio||1,2);
+ const w=Math.round(innerWidth*d),h=Math.round(innerHeight*d);
+ if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}
+ gl.viewport(0,0,w,h);render360();
+}
+function render360(){
+ if(!currentImage)return;
+ gl.useProgram(prog);gl.uniform1f(uYaw,yaw);gl.uniform1f(uPitch,pitch);gl.uniform1f(uAspect,innerWidth/innerHeight);gl.uniform1f(uFov,Math.tan(fov/2));
+ gl.drawArrays(gl.TRIANGLES,0,6);updateGhost();
+}
 async function setScene(i){
- const cached=imageCache.has(SCENES[i].file);
- if(!cached) loader.classList.add("show");
+ loader.classList.add("show");
  try{
    const img=await loadImg(SCENES[i].file);
-   currentScene=i;panoImg=img;pan=0;
-   panoA.src=img.src;panoB.src=img.src;
-   sceneLabel.textContent=`📍 ${SCENES[i].name}`;
-   photoSceneName.textContent=`📍 ${SCENES[i].name}`;
+   currentScene=i;yaw=0;pitch=0;uploadTexture(img);
+   sceneLabel.textContent=`📍 ${SCENES[i].name}`;photoSceneName.textContent=`📍 ${SCENES[i].name}`;
    $$(".sceneChip").forEach((b,j)=>b.classList.toggle("active",j===i));
-   renderPanorama();
    updateGhost();
- }catch(e){alert("找不到場景圖片："+SCENES[i].file)}
+ }catch(e){alert("找不到 360° 場景圖片："+SCENES[i].file)}
  finally{loader.classList.remove("show")}
-}
-
-function renderPanorama(){
- if(!panoImg)return;
- const H=innerHeight;
- const W=panoImg.naturalWidth*(H/panoImg.naturalHeight);
- if(!W)return;
- const x=-(pan*W);
- panoA.style.width=W+"px";panoB.style.width=W+"px";
- panoA.style.height=H+"px";panoB.style.height=H+"px";
- panoA.style.transform=`translate3d(${x}px,0,0)`;
- panoB.style.transform=`translate3d(${x+W}px,0,0)`;
-
- // if first image entirely left, show an extra copy by moving A after B
- if(x+W<innerWidth){
-   panoA.style.transform=`translate3d(${x+W*2}px,0,0)`;
- }
- updateGhost();
 }
 
 function buildNav(){
  sceneNav.innerHTML="";
- SCENES.forEach((s,i)=>{
-   const b=document.createElement("button");b.className="sceneChip"+(i===0?" active":"");
-   b.textContent=`${s.icon} ${s.name}`;b.onclick=()=>setScene(i);sceneNav.appendChild(b);
- });
+ SCENES.forEach((s,i)=>{const b=document.createElement("button");b.className="sceneChip"+(i===0?" active":"");b.textContent=`${s.icon} ${s.name}`;b.onclick=()=>setScene(i);sceneNav.appendChild(b)});
 }
 
-viewer.addEventListener("pointerdown",e=>{dragging=true;lastX=e.clientX;try{viewer.setPointerCapture(e.pointerId)}catch(_){}});
+viewer.addEventListener("pointerdown",e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;viewer.setPointerCapture?.(e.pointerId)});
 viewer.addEventListener("pointermove",e=>{
- if(!dragging||!panoImg)return;
- const H=innerHeight,W=panoImg.naturalWidth*(H/panoImg.naturalHeight);
- const dx=e.clientX-lastX;lastX=e.clientX;pan=wrap01(pan-dx/W);renderPanorama()
+ if(!dragging)return;
+ const dx=e.clientX-lastX,dy=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;
+ yaw-=dx*0.0042; pitch+=dy*0.0037; pitch=Math.max(-1.35,Math.min(1.35,pitch)); render360();
 });
 addEventListener("pointerup",()=>dragging=false);addEventListener("pointercancel",()=>dragging=false);
+viewer.addEventListener("wheel",e=>{e.preventDefault();fov+=e.deltaY*0.0005;fov=Math.max(.75,Math.min(1.7,fov));render360()},{passive:false});
 
 async function enableSensor(){
  try{
    if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function"){
-     const r=await DeviceOrientationEvent.requestPermission();if(r!=="granted")return
+     const r=await DeviceOrientationEvent.requestPermission(); if(r!=="granted")return;
    }
    if("DeviceOrientationEvent" in window){
      sensorEnabled=true;
      addEventListener("deviceorientation",e=>{
-       if(e.alpha==null)return;
-       if(sensorBase==null)sensorBase=e.alpha;
-       let d=e.alpha-sensorBase;if(d>180)d-=360;if(d<-180)d+=360;
-       sensorOffset=d/360;
-       pan=wrap01(sensorOffset);
-       renderPanorama();
-     },true)
+       if(e.alpha==null||e.beta==null)return;
+       if(sensorBaseAlpha==null){sensorBaseAlpha=e.alpha;sensorBaseBeta=e.beta}
+       let da=e.alpha-sensorBaseAlpha;if(da>180)da-=360;if(da<-180)da+=360;
+       let db=e.beta-sensorBaseBeta;
+       yaw=-da*Math.PI/180; pitch=Math.max(-1.25,Math.min(1.25,db*Math.PI/180)); render360();
+     },true);
    }
  }catch(_){}
 }
 
 function currentGhost(){return GHOSTS.find(g=>g.scene===SCENES[currentScene].id)}
+function normAng(a){while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a}
 function updateGhost(){
  const g=currentGhost();
- if(!g||caught.has(g.id)||!panoImg){ghostHotspot.style.display="none";return}
- let d=g.yaw-pan;while(d>.5)d-=1;while(d<-.5)d+=1;
- const H=innerHeight,W=panoImg.naturalWidth*(H/panoImg.naturalHeight);
- const visibleFrac=innerWidth/W;
- if(Math.abs(d)>visibleFrac*.52){ghostHotspot.style.display="none";return}
- ghostHotspot.style.left=(50+(d/visibleFrac)*100)+"%";
- ghostHotspot.style.top="52%";
+ if(!g||caught.has(g.id)){ghostHotspot.style.display="none";return}
+ const gy=g.yaw*2*Math.PI-Math.PI, gp=(g.pitch||0)*Math.PI/2;
+ const dy=normAng(gy-yaw), dp=gp-pitch;
+ const halfV=fov/2, halfH=Math.atan(Math.tan(halfV)*(innerWidth/innerHeight));
+ if(Math.abs(dy)>halfH*1.05||Math.abs(dp)>halfV*1.05){ghostHotspot.style.display="none";return}
+ ghostHotspot.style.left=(50+(dy/halfH)*50)+"%";
+ ghostHotspot.style.top=(50-(dp/halfV)*50)+"%";
  hotspotImg.src=url(g.file);ghostHotspot.style.display="block";
 }
 
@@ -382,57 +295,39 @@ ghostHotspot.onclick=()=>{
  const g=currentGhost();if(!g)return;
  caught.add(g.id);localStorage.setItem("awooCaughtGhosts",JSON.stringify([...caught]));
  updateProgress();renderAlbum();captureGhost.src=url(g.file);captureName.textContent=`「${g.name}」已加入萌鬼圖鑑！`;
- ghostHotspot.style.display="none";openM(captureModal)
+ ghostHotspot.style.display="none";openM(captureModal);
 };
 
 function updateProgress(){progress.textContent=`萌鬼圖鑑　${caught.size} / 6`}
-function renderAlbum(){
- ghostGrid.innerHTML="";
- GHOSTS.forEach(g=>{
-  const d=document.createElement("div");d.className="ghostCard"+(caught.has(g.id)?" caught":"");
-  d.innerHTML=`<img src="${url(g.file)}"><b>${caught.has(g.id)?g.name:"？？？"}</b>`;
-  ghostGrid.appendChild(d)
- })
-}
+function renderAlbum(){ghostGrid.innerHTML="";GHOSTS.forEach(g=>{const d=document.createElement("div");d.className="ghostCard"+(caught.has(g.id)?" caught":"");d.innerHTML=`<img src="${url(g.file)}"><b>${caught.has(g.id)?g.name:"？？？"}</b>`;ghostGrid.appendChild(d)})}
 $("#albumBtn").onclick=()=>{renderAlbum();openM(albumModal)};
 $("#continueBtn").onclick=()=>closeM(captureModal);
 $("#photoNow").onclick=()=>{closeM(captureModal);enterPhoto()};
 $("#photoBtn").onclick=enterPhoto;
 
-function drawCurrentView(ctx,w,h){
- if(!panoImg)return;
- const scale=h/panoImg.naturalHeight;
- const panoW=panoImg.naturalWidth*scale;
- const offset=pan*panoW;
- const x=-offset;
- ctx.drawImage(panoImg,x,0,panoW,h);
- ctx.drawImage(panoImg,x+panoW,0,panoW,h);
- if(x+panoW<w)ctx.drawImage(panoImg,x+panoW*2,0,panoW,h)
+function captureCurrentView(target,w,h){
+ const oldW=canvas.width,oldH=canvas.height;
+ const d=Math.min(devicePixelRatio||1,2);
+ canvas.width=Math.round(w*d);canvas.height=Math.round(h*d);gl.viewport(0,0,canvas.width,canvas.height);render360();
+ target.drawImage(canvas,0,0,w,h);
+ canvas.width=oldW;canvas.height=oldH;gl.viewport(0,0,oldW,oldH);render360();
 }
-
 function enterPhoto(){
  photoPanel.classList.add("show");hud.classList.add("hidden");
- photoBg.width=innerWidth*(devicePixelRatio||1);photoBg.height=innerHeight*(devicePixelRatio||1);
- const c=photoBg.getContext("2d");c.setTransform(devicePixelRatio||1,0,0,devicePixelRatio||1,0,0);drawCurrentView(c,innerWidth,innerHeight);
+ photoBg.width=innerWidth;photoBg.height=innerHeight;
+ const c=photoBg.getContext("2d");c.clearRect(0,0,innerWidth,innerHeight);captureCurrentView(c,innerWidth,innerHeight);
  $$("[data-g]").forEach((im,i)=>{im.src=url(GHOSTS[i].file);im.style.display=caught.has(GHOSTS[i].id)?"block":"none"});
 }
 $("#exitPhoto").onclick=()=>{photoPanel.classList.remove("show");hud.classList.remove("hidden");updateGhost()};
 $("#pickPet").onclick=()=>petInput.click();
-petInput.onchange=()=>{
- const f=petInput.files&&petInput.files[0];if(!f)return;
- const i=new Image();i.onload=()=>{petImage=i;petPreview.src=i.src;petWrap.style.display="block"};i.src=URL.createObjectURL(f)
-};
+petInput.onchange=()=>{const f=petInput.files&&petInput.files[0];if(!f)return;const i=new Image();i.onload=()=>{petImage=i;petPreview.src=i.src;petWrap.style.display="block"};i.src=URL.createObjectURL(f)};
 
-function drawCover(ctx,img,x,y,w,h){
- const ir=img.width/img.height,tr=w/h;let sx=0,sy=0,sw=img.width,sh=img.height;
- if(ir>tr){sw=img.height*tr;sx=(img.width-sw)/2}else{sh=img.width/tr;sy=(img.height-sh)/2}
- ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h)
-}
+function drawCover(ctx,img,x,y,w,h){const ir=img.width/img.height,tr=w/h;let sx=0,sy=0,sw=img.width,sh=img.height;if(ir>tr){sw=img.height*tr;sx=(img.width-sw)/2}else{sh=img.width/tr;sy=(img.height-sh)/2}ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h)}
 async function loadAsset(f){return await loadImg(f)}
 $("#makeStory").onclick=async()=>{
  if(!petImage){showToast("先拍／選毛孩照片 🐾");return}
  const ctx=resultCanvas.getContext("2d");ctx.clearRect(0,0,1080,1920);
- drawCurrentView(ctx,1080,1920);
+ captureCurrentView(ctx,1080,1920);
  ctx.fillStyle="rgba(3,10,30,.18)";ctx.fillRect(0,0,1080,1920);
  ctx.save();ctx.beginPath();ctx.roundRect(170,470,740,940,54);ctx.clip();drawCover(ctx,petImage,170,470,740,940);ctx.restore();
  ctx.strokeStyle="#fff";ctx.lineWidth=10;ctx.beginPath();ctx.roundRect(170,470,740,940,54);ctx.stroke();
@@ -441,40 +336,21 @@ $("#makeStory").onclick=async()=>{
  const dog=await loadAsset("awoo-halloween-npc.png");ctx.drawImage(dog,20,1270,350,520);
  const pos=[[20,220],[830,220],[20,950],[835,950],[230,210],[760,1480]];
  for(let i=0;i<GHOSTS.length;i++)if(caught.has(GHOSTS[i].id)){const im=await loadAsset(GHOSTS[i].file);ctx.drawImage(im,pos[i][0],pos[i][1],220,240)}
- ctx.textAlign="right";ctx.font="800 28px system-ui";ctx.fillText("aWoo · Always be here",1020,1870);
- openM(resultModal)
+ ctx.textAlign="right";ctx.font="800 28px system-ui";ctx.fillText("aWoo · Always be here",1020,1870);openM(resultModal);
 };
 $("#saveResult").onclick=()=>{const a=document.createElement("a");a.download="awoo-halloween-photo.png";a.href=resultCanvas.toDataURL("image/png");a.click()};
-$("#shareResult").onclick=async()=>{
- const blob=await new Promise(r=>resultCanvas.toBlob(r,"image/png"));
- const file=new File([blob],"awoo-halloween-photo.png",{type:"image/png"});
- if(navigator.canShare&&navigator.canShare({files:[file]}))await navigator.share({files:[file]});else showToast("請先儲存照片")
-};
+$("#shareResult").onclick=async()=>{const blob=await new Promise(r=>resultCanvas.toBlob(r,"image/png"));const file=new File([blob],"awoo-halloween-photo.png",{type:"image/png"});if(navigator.canShare&&navigator.canShare({files:[file]}))await navigator.share({files:[file]});else showToast("請先儲存照片")};
 
-$("#soundBtn").onclick=async()=>{
- soundOn=!soundOn;$("#soundBtn").textContent=soundOn?"🔊":"🔇";
- if(soundOn){try{await bgm.play()}catch(_){showToast("尚未放入 BGM")}}else bgm.pause()
-};
-
-$("#enterTown").onclick=async()=>{
- await enableSensor();welcome.style.display="none";hud.classList.remove("hidden");
- try{bgm.volume=.45;await bgm.play()}catch(_){soundOn=false;$("#soundBtn").textContent="🔇"}
-};
-
-addEventListener("resize",renderPanorama);
+$("#soundBtn").onclick=async()=>{soundOn=!soundOn;$("#soundBtn").textContent=soundOn?"🔊":"🔇";if(soundOn){try{await bgm.play()}catch(_){showToast("尚未放入 BGM")}}else bgm.pause()};
+$("#enterTown").onclick=async()=>{await enableSensor();welcome.style.display="none";hud.classList.remove("hidden");try{bgm.volume=.45;await bgm.play()}catch(_){soundOn=false;$("#soundBtn").textContent="🔇"}};
+addEventListener("resize",resizeGL);
 
 async function start(){
- preloadAssets();
- buildNav();renderAlbum();updateProgress();
- await removeWhiteBackground();
+ resizeGL();buildNav();renderAlbum();updateProgress();preloadAll();
  await setScene(0);
- setTimeout(()=>{
-   intro.style.opacity="0";intro.style.transition="opacity .35s";
-   setTimeout(()=>{intro.style.display="none";welcome.style.display="grid"},350)
- },1700)
+ setTimeout(()=>{intro.style.opacity="0";intro.style.transition="opacity .35s";setTimeout(()=>{intro.style.display="none";welcome.style.display="grid"},350)},1700);
 }
 start();
-
 })();
 </script>
 </body>
